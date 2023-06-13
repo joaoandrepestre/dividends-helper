@@ -98,7 +98,7 @@ public class State {
     }
 
     public async Task Load() {
-        Console.WriteLine("Loading states...");
+        Logger.Log("Loading states...");
         var p = System.IO.Path.Join(Path, "monitored");
         if (!File.Exists(p)) return;
         string? s = "";
@@ -106,13 +106,13 @@ public class State {
             s = await reader.ReadLineAsync();
         }
         if (s == null) {
-            Console.WriteLine("Loading states done.");
+            Logger.Log("Loading states done.");
             return;
         }
         MonitoredSymbols.UnionWith(s.Split(",").ToHashSet());
         await Instruments.Load(MonitoredSymbols);
         await CashProvisions.Load(MonitoredSymbols);
-        Console.WriteLine("Loading states done.");
+        Logger.Log("Loading states done.");
     }
 
     public async Task Stop() {

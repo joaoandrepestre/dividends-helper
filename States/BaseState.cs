@@ -14,14 +14,14 @@ public abstract class BaseState<TId, T, TRequest, TDto>
     protected abstract IBaseFetcher<TRequest, TDto> GetFetcher();
 
     public async Task Load(IEnumerable<TRequest> loadRequests) {
-        Console.WriteLine($"Loading state {GetType().Name}...");
-        Console.WriteLine("Initial fetch...");
+        Logger.Log($"Loading state {GetType().Name}...");
+        Logger.Log("Initial fetch...");
         foreach (var request in loadRequests) {
-            Console.WriteLine($"Fetching {typeof(T).Name} data for {request}...");
+            Logger.Log($"Fetching {typeof(T).Name} data for {request}...");
             await Fetch(request);
         }
-        Console.WriteLine("Initial fetch done.");
-        Console.WriteLine($"Loading state {GetType().Name} done.");
+        Logger.Log("Initial fetch done.");
+        Logger.Log($"Loading state {GetType().Name} done.");
     }
 
     public async Task<IEnumerable<T>> Fetch(TRequest request) {

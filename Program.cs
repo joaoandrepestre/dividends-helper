@@ -6,17 +6,24 @@ internal class Program {
     static async Task Main() {
 
         // Start up
-        Console.WriteLine("Starting Dividends Helper");
+        Logger.Log("Starting Dividends Helper");
+
         var state = new State();
         await state.Load();
+
         var telegram = new TelegramBotRouter(state);
-        await telegram.Load();
-        Console.WriteLine("Starting done.");
+        if (!(await telegram.Load())) {
+            Logger.Log("Failed to load Telegram Bot. Forcefully shutting down...");
+            return;
+        }
+
+        Logger.Log("Starting done.");
         Console.WriteLine();
 
-        Console.WriteLine("Press enter to quit...");
+        Logger.Log("Press enter to quit...");
+
         Console.ReadLine();
-        Console.WriteLine("Shutting down...");
+        Logger.Log("Shutting down...");
         telegram.Stop();
         await state.Stop();
     }

@@ -30,11 +30,11 @@ public class TelegramBotRouter {
         _summaryCommandHandler = new SummaryCommandHandler(_state);
     }
 
-    public async Task Load() {
-        Console.WriteLine("Loading Telegram Bot...");
+    public async Task<bool> Load() {
+        Logger.Log("Loading Telegram Bot...");
         if (string.IsNullOrEmpty(AccessToken)) {
-            Console.WriteLine($"ERROR - Could not retrieve acess token. Remember to set the enviroment variable {_tokenName}.");
-            return;
+            Logger.Log($"ERROR - Could not retrieve acess token. Remember to set the enviroment variable {_tokenName}.", LogLevel.Error);
+            return false;
         }
         _botClient = new TelegramBotClient(AccessToken);
         _botClient.StartReceiving(
@@ -45,8 +45,9 @@ public class TelegramBotRouter {
         );
 
         var me = await _botClient.GetMeAsync();
-        Console.WriteLine($"Start listening for @{me.Username}...");
-        Console.WriteLine("Loading Telegram Bot done.");
+        Logger.Log($"Start listening for @{me.Username}...");
+        Logger.Log("Loading Telegram Bot done.");
+        return true;
     }
 
     public void Stop() {
@@ -74,7 +75,7 @@ public class TelegramBotRouter {
         }
         // recommend portifolio command
 
-        Console.WriteLine($"Received an unrecognized command '{command}' in chat {message.Chat.Id} from {message.From?.Username ?? ""}.");
+        Logger.Log($"Received an unrecognized command '{command}' in chat {message.Chat.Id} from {message.From?.Username ?? ""}.");
     }
 
     private Task HandleErrors(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken) {
@@ -84,7 +85,7 @@ public class TelegramBotRouter {
             _ => exception.ToString()
         };
 
-        Console.WriteLine(ErrorMessage);
+        Logger.Log(ErrorMessage, LogLevel.Error);
         return Task.CompletedTask;
     }
 }
