@@ -15,7 +15,7 @@ public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
             return ret;
         }
         var symbol = args[1];
-        ret.Symbol = symbol;
+        ret.Symbol = symbol.ToUpper();
         return ret;
     }
 
@@ -42,18 +42,14 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
             return ret;
         }
         var symbol = args[1];
-        ret.Symbol = symbol;
+        ret.Symbol = symbol.ToUpper();
 
-        var minDate = new DateTime(1, 1, 1);
-        var maxDate = DateTime.Today;
         if (args.Length >= 3) // minDate
-            if (!DateTime.TryParse(args[2], out minDate))
-                minDate = new DateTime(1, 1, 1);
+            if (DateTime.TryParse(args[2], out var minDate))
+                ret.MinDate = minDate;
         if (args.Length >= 4) // maxDate
-            if (!DateTime.TryParse(args[3], out maxDate))
-                maxDate = DateTime.Today;
-        ret.MinDate = minDate;
-        ret.MaxDate = maxDate;
+            if (DateTime.TryParse(args[3], out var maxDate))
+                ret.MaxDate = maxDate;
         return ret;
     }
 
@@ -63,7 +59,7 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
         }
 
         var summary = _state.CashProvisions.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
-        return Task.FromResult($"``` {summary} ```");
+        return Task.FromResult(summary.ToMarkdown());
 
     }
 }

@@ -77,5 +77,39 @@ public class CashProvisionSummary {
         LastCashProvision, FirstCashProvision
     );
 
+    private static string _markdownTemplate = @"Summary for *{0}* from _{1}_ to _{2}_
+`-----------------------------------------------------------------------`
+
+\- *Last*: `{17}`
+\- *First*: `{18}`
+    
+*Days* \= `{3}`, Months \= `{4}`, Years \= `{5}`
+*Period*: `{14:0.00}` _days_ // `{15:0.00}` _months_ // `{16:0.00}` _years_
+
+Cash provisions payed \= `{6}`, Total value payed \= `{7:0.00} R$\/unt`
+
+```
+|#########|     Value     | Pct of Mkt Price |
+|---------|---------------|------------------|
+| Daily   |  {8:00.00} R$/unt |          {9:00.000}% |
+| Monthly |  {10:00.00} R$/unt |          {11:00.000}% |
+| Yearly  |  {12:00.00} R$/unt |          {13:00.000}% |
+```
+`-----------------------------------------------------------------------`
+
+Source: [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/empresas-listadas.htm)
+";
+    public string ToMarkdown() => string.Format(
+        _markdownTemplate,
+        Symbol, StartDate.DateString(), EndDate.DateString(),
+        Days, Months, Years,
+        TotalCashProvisionCount, TotalValueCash,
+        DailyAverageValueCash, DailyAverageCorporateActionPrice,
+        MonthlyAverageValueCash, MonthlyAverageCorporateActionPrice,
+        YearlyAverageValueCash, YearlyAverageCorporateActionPrice,
+        DailyAverageCashProvisionPeriod, MonthlyAverageCashProvisionPeriod, YearlyAverageCashProvisionPeriod,
+        LastCashProvision, FirstCashProvision
+    );
+
     private static decimal SafeDivision(decimal a, int b) => b == 0 ? 0 : a / b;
 }

@@ -38,5 +38,6 @@ public static class DateExtensions {
     public static int DaysUntill(this DateTime me, DateTime date) =>
         (int)(date - me).TotalDays;
 
-    public static string DateString(this DateTime me) => $"{me.Day}/{me.Month}/{me.Year}";
+    public static string DateString(this DateTime me) => me == DateTime.MinValue ?
+        "first recorded date" : $"{me.Day}/{me.Month}/{me.Year}";
 }
