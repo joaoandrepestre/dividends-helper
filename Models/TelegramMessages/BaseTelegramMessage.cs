@@ -13,11 +13,9 @@ public abstract class BaseTelegramMessage {
 
     private string _error = "";
     public string Error {
-        get => Valid ? "" : $"{CommandName()} {_error}\n\n{Suggestion()}";
+        get => Valid ? "" : $"{CommandName()} {_error}";
         set => _error = value;
     }
 
     public abstract string CommandName();
-
-    public abstract string Suggestion();
 }

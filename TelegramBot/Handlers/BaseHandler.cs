@@ -28,6 +28,8 @@ public abstract class BaseHandler<T> where T : BaseTelegramMessage, new() {
         if (!command.Valid) {
             await botClient.SendTextMessageAsync(
                 chatId: command.ChatId,
+                parseMode: ParseMode.MarkdownV2,
+                disableWebPagePreview: true,
                 text: command.Error,
                 cancellationToken: cancellationToken);
             return;
@@ -37,6 +39,7 @@ public abstract class BaseHandler<T> where T : BaseTelegramMessage, new() {
         await botClient.SendTextMessageAsync(
                 chatId: command.ChatId,
                 parseMode: ParseMode.MarkdownV2,
+                disableWebPagePreview: true,
                 text: res,
                 cancellationToken: cancellationToken);
     }
