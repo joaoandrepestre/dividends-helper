@@ -18,16 +18,14 @@ public class TelegramBotRouter {
         Environment.GetEnvironmentVariable(_tokenName, Machine) ?? "";
     private readonly CancellationTokenSource _cancel = new();
 
-    private TelegramBotClient _botClient;
+    private TelegramBotClient? _botClient;
 
-    private readonly State _state;
     private readonly MonitorCommandHandler _monitorCommandHandler;
     private readonly SummaryCommandHandler _summaryCommandHandler;
 
     public TelegramBotRouter(State state) {
-        _state = state;
-        _monitorCommandHandler = new MonitorCommandHandler(_state);
-        _summaryCommandHandler = new SummaryCommandHandler(_state);
+        _monitorCommandHandler = new MonitorCommandHandler(state);
+        _summaryCommandHandler = new SummaryCommandHandler(state);
     }
 
     public async Task<bool> Load() {

@@ -1,6 +1,6 @@
 ﻿namespace DividendsHelper.Models;
 public class PagedHttpRequest {
-    private static string _emptyString = "aaaaa";
+    private const string EmptyString = "aaaaa";
 
     public RequestType RequestType { get; set; }
 
@@ -8,15 +8,15 @@ public class PagedHttpRequest {
     public int PageNumber { get; set; } = 1;
     public int PageSize { get; set; } = 60;
 
-    private string _tradingName;
+    private string? _tradingName;
     public string TradingName {
-        get => string.IsNullOrEmpty(_tradingName) ? _emptyString : _tradingName;
+        get => string.IsNullOrEmpty(_tradingName) ? EmptyString : _tradingName;
         set => _tradingName = value;
     }
 
-    private string _company;
+    private string? _company;
     public string Company {
-        get => string.IsNullOrEmpty(_company) ? _emptyString : _company;
+        get => string.IsNullOrEmpty(_company) ? EmptyString : _company;
         set => _company = value;
     }
 

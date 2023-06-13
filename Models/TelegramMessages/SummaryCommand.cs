@@ -1,7 +1,8 @@
 ﻿namespace DividendsHelper.Models;
-public class SummaryCommand : BaseTelegramMessage {
+public class SummaryCommand : BaseTelegramMessage
+{
     [TelegramMessageArgument(1, true, "PETR4")]
-    public string Symbol { get; set; }
+    public string Symbol { get; set; } = "";
     [TelegramMessageArgument(2)]
     public DateTime MinDate { get; set; } = DateTime.MinValue;
     [TelegramMessageArgument(3)]

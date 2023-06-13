@@ -3,12 +3,12 @@
 namespace DividendsHelper.Models;
 
 public class CashProvision : IBaseModel<Guid> {
-    public Guid Id { get; set; }
-    public string Symbol { get; set; }
-    public DateTime ReferenceDate { get; set; }
-    public decimal ValueCash { get; set; }
-    public decimal CorporateActionPrice { get; set; }
-    public string CorporateAction { get; set; }
+    public Guid Id { get; }
+    public string Symbol { get; init; } = "";
+    public DateTime ReferenceDate { get; init; } = DateTime.Today;
+    public decimal ValueCash { get; init; }
+    public decimal CorporateActionPrice { get; init; }
+    public string CorporateAction { get; set; } = "";
 
     public CashProvision() {
         Id = Guid.NewGuid();
@@ -19,39 +19,40 @@ public class CashProvision : IBaseModel<Guid> {
 }
 
 // TODO add std deviation and etc.
-public class CashProvisionSummary {
-    public string Symbol { get; set; }
-    public DateTime StartDate { get; set; }
-    public DateTime EndDate { get; set; }
+public class CashProvisionSummary
+{
+    public string Symbol { get; init; } = "";
+    public DateTime StartDate { get; init; }
+    public DateTime EndDate { get; init; }
 
-    public int Days => FirstCashProvisionDate.DaysUntill(LastCashProvisionDate);
-    public int Months => FirstCashProvisionDate.MonthsUntill(LastCashProvisionDate);
-    public int Years => FirstCashProvisionDate.YearsUntill(LastCashProvisionDate);
+    private int Days => FirstCashProvisionDate.DaysUntill(LastCashProvisionDate);
+    private int Months => FirstCashProvisionDate.MonthsUntill(LastCashProvisionDate);
+    private int Years => FirstCashProvisionDate.YearsUntill(LastCashProvisionDate);
 
     public int TotalCashProvisionCount { get; set; }
 
     public decimal TotalValueCash { get; set; }
     public decimal AverageValueCash => SafeDivision(TotalValueCash, TotalCashProvisionCount);
-    public decimal DailyAverageValueCash => SafeDivision(TotalValueCash, Days);
-    public decimal MonthlyAverageValueCash => SafeDivision(TotalValueCash, Months);
-    public decimal YearlyAverageValueCash => SafeDivision(TotalValueCash, Years);
+    private decimal DailyAverageValueCash => SafeDivision(TotalValueCash, Days);
+    private decimal MonthlyAverageValueCash => SafeDivision(TotalValueCash, Months);
+    private decimal YearlyAverageValueCash => SafeDivision(TotalValueCash, Years);
 
     public decimal TotalCorporateActionPrice { get; set; }
     public decimal AverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, TotalCashProvisionCount);
-    public decimal DailyAverageCorporateActionPrice => SafeDivision(TotalValueCash, Days);
-    public decimal MonthlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Months);
-    public decimal YearlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Years);
+    private decimal DailyAverageCorporateActionPrice => SafeDivision(TotalValueCash, Days);
+    private decimal MonthlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Months);
+    private decimal YearlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Years);
 
 
     public CashProvision? FirstCashProvision { get; set; }
-    public DateTime FirstCashProvisionDate => FirstCashProvision?.ReferenceDate ?? default;
+    private DateTime FirstCashProvisionDate => FirstCashProvision?.ReferenceDate ?? default;
     public CashProvision? LastCashProvision { get; set; }
-    public DateTime LastCashProvisionDate => LastCashProvision?.ReferenceDate ?? default;
-    public decimal DailyAverageCashProvisionPeriod => SafeDivision(Days, TotalCashProvisionCount - 1);
-    public decimal MonthlyAverageCashProvisionPeriod => SafeDivision(Months, TotalCashProvisionCount - 1);
-    public decimal YearlyAverageCashProvisionPeriod => SafeDivision(Years, TotalCashProvisionCount - 1);
+    private DateTime LastCashProvisionDate => LastCashProvision?.ReferenceDate ?? default;
+    private decimal DailyAverageCashProvisionPeriod => SafeDivision(Days, TotalCashProvisionCount - 1);
+    private decimal MonthlyAverageCashProvisionPeriod => SafeDivision(Months, TotalCashProvisionCount - 1);
+    private decimal YearlyAverageCashProvisionPeriod => SafeDivision(Years, TotalCashProvisionCount - 1);
 
-    private static readonly string _template = @"Summary for {0} from {1} to {2}:
+    private const string Template = @"Summary for {0} from {1} to {2}:
     Last: {17}
     First: {18}
     
@@ -65,8 +66,9 @@ public class CashProvisionSummary {
     Yearly Avg: Value = {12:0.00}, Pct of Mkt Price = {13:0.000}%
 
 ";
+
     public override string ToString() => string.Format(
-        _template,
+        Template,
         Symbol, StartDate.DateString(), EndDate.DateString(),
         Days, Months, Years,
         TotalCashProvisionCount, TotalValueCash,
@@ -77,7 +79,7 @@ public class CashProvisionSummary {
         LastCashProvision, FirstCashProvision
     );
 
-    private static readonly string _markdownTemplate = @"Summary for *{0}* from _{1}_ to _{2}_
+    private const string MarkdownTemplate = @"Summary for *{0}* from _{1}_ to _{2}_
 `-----------------------------------------------------------------------`
 
 \- *Last*: `{17}`
@@ -99,8 +101,9 @@ Cash provisions payed \= `{6}`, Total value payed \= `{7:0.00} R$\/unt`
 
 Source: [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/empresas-listadas.htm)
 ";
+
     public string ToMarkdown() => string.Format(
-        _markdownTemplate,
+        MarkdownTemplate,
         Symbol, StartDate.DateString(), EndDate.DateString(),
         Days, Months, Years,
         TotalCashProvisionCount, TotalValueCash,

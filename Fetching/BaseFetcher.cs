@@ -33,6 +33,7 @@ public abstract class BaseFetcher<TRequest, TResponse> : IBaseFetcher<TRequest, 
         var ret = pagedResponse?.Results.ToList() ?? new List<TResponse>();
         for (var pageNumber = 2; pageNumber <= totalPages; pageNumber++) {
             req = GetPagedRequest(request, pageNumber);
+            if (req == null) continue;
             pagedResponse = await DoHttpRequest(req);
             ret.AddRange(pagedResponse?.Results ?? Enumerable.Empty<TResponse>());
         }

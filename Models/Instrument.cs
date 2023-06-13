@@ -2,7 +2,7 @@
 public class Instrument : IBaseModel<string> {
     public string Id => Symbol;
 
-    public string Symbol { get; set; }
-    public string TradingName { get; set; }
+    public string Symbol { get; init; } = "";
+    public string TradingName { get; init; } = "";
 
 }

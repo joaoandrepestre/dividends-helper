@@ -14,12 +14,12 @@ public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
     }
     
     protected override async Task<string> GetResponse(MonitorCommand command) {
-        var exists = await _state.Monitor(command.Symbol);
+        var exists = await State.Monitor(command.Symbol);
         if (!exists) {
             Console.WriteLine($"Received /monitor command for non existent symbol {command.Symbol} from {command.Sender}");
             return $"Could not find *{command.Symbol}* at [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/empresas-listadas.htm)\nPlease check the spelling";
         }
-        var summary = _state.CashProvisions.GetSummary(command.Symbol.ToUpper(), DateTime.Today.AddYears(-1));
+        var summary = State.CashProvisions.GetSummary(command.Symbol.ToUpper(), DateTime.Today.AddYears(-1));
         return $"Started monitoring *{command.Symbol.ToUpper()}* \nHere's the most recent data:\n\n{summary.ToMarkdown()}";
     }
 }
@@ -37,11 +37,11 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
     }
 
     protected override Task<string> GetResponse(SummaryCommand command) {
-        if (!_state.MonitoredSymbols.Contains(command.Symbol)) {
+        if (!State.MonitoredSymbols.Contains(command.Symbol)) {
             return Task.FromResult($"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`");
         }
 
-        var summary = _state.CashProvisions.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
+        var summary = State.CashProvisions.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
         return Task.FromResult(summary.ToMarkdown());
 
     }

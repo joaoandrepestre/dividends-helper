@@ -4,7 +4,7 @@ using DividendsHelper.Models;
 
 namespace DividendsHelper.Utils;
 public static class DictionaryExtensions {
-    public static HashSet<T> GetOrAdd<TKey, T>(this Dictionary<TKey, HashSet<T>> me, TKey key) {
+    public static HashSet<T> GetOrAdd<TKey, T>(this Dictionary<TKey, HashSet<T>> me, TKey key) where TKey : notnull {
         if (me.TryGetValue(key, out var value)) return value;
         var v = new HashSet<T>();
         me.Add(key, v);

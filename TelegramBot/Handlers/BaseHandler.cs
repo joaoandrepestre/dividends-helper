@@ -8,10 +8,10 @@ using Telegram.Bot.Types.Enums;
 
 namespace DividendsHelper.TelegramBot.Handlers;
 public abstract class BaseHandler<T> where T : BaseTelegramMessage, new() {
-    protected State _state;
+    protected readonly State State;
 
-    public BaseHandler(State state) {
-        _state = state;
+    protected BaseHandler(State state) {
+        State = state;
     }
 
     protected virtual T ValidateArgs(T command) => command;
@@ -36,10 +36,10 @@ public abstract class BaseHandler<T> where T : BaseTelegramMessage, new() {
             var att = prop.GetAttribute<TelegramMessageArgumentAttribute>();
             var i = att?.Position;
             if (i is null) continue;
-            string arg = null;
+            string? arg = null;
             try {
                 arg = args[(int)i];
-            } catch (IndexOutOfRangeException ex) {
+            } catch (IndexOutOfRangeException) {
                 Logger.Log($"No value passed for argument {prop.Name}", LogLevel.Error);
             }
             if (arg is null || !arg.TryParse(out var v, prop.PropertyType)) {
