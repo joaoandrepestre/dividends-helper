@@ -9,7 +9,7 @@ internal class Program {
         Console.WriteLine("Starting Dividends Helper");
         var state = new State();
         await state.Load();
-        var telegram = new TelegramBotHanlders(state);
+        var telegram = new TelegramBotRouter(state);
         await telegram.Load();
         Console.WriteLine("Starting done.");
         Console.WriteLine();
