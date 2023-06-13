@@ -3,7 +3,7 @@ using DividendsHelper.TelegramBot;
 
 namespace DividendsHelper;
 internal class Program {
-    static async Task Main(string[] args) {
+    static async Task Main() {
 
         // Start up
         Console.WriteLine("Starting Dividends Helper");

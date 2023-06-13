@@ -14,15 +14,15 @@ public class TelegramBotRouter {
         AllowedUpdates = Array.Empty<UpdateType>(),
     };
 
-    private string _accessToken => Environment.GetEnvironmentVariable(_tokenName, Process) ??
+    private static string AccessToken => Environment.GetEnvironmentVariable(_tokenName, Process) ??
         Environment.GetEnvironmentVariable(_tokenName, Machine) ?? "";
     private readonly CancellationTokenSource _cancel = new();
 
     private TelegramBotClient _botClient;
 
-    private State _state;
-    private MonitorCommandHandler _monitorCommandHandler;
-    private SummaryCommandHandler _summaryCommandHandler;
+    private readonly State _state;
+    private readonly MonitorCommandHandler _monitorCommandHandler;
+    private readonly SummaryCommandHandler _summaryCommandHandler;
 
     public TelegramBotRouter(State state) {
         _state = state;
@@ -32,11 +32,11 @@ public class TelegramBotRouter {
 
     public async Task Load() {
         Console.WriteLine("Loading Telegram Bot...");
-        if (string.IsNullOrEmpty(_accessToken)) {
+        if (string.IsNullOrEmpty(AccessToken)) {
             Console.WriteLine($"ERROR - Could not retrieve acess token. Remember to set the enviroment variable {_tokenName}.");
             return;
         }
-        _botClient = new TelegramBotClient(_accessToken);
+        _botClient = new TelegramBotClient(AccessToken);
         _botClient.StartReceiving(
             updateHandler: RouteMessages,
             pollingErrorHandler: HandleErrors,

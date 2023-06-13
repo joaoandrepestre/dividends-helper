@@ -5,14 +5,14 @@ using static System.EnvironmentVariableTarget;
 
 namespace DividendsHelper.States;
 public class InstrumentState : BaseState<string, Instrument, string, SearchResult> {
-    private InstrumentFetcher _fetcher;
+    private readonly InstrumentFetcher _fetcher;
 
     public InstrumentState(InstrumentFetcher fetcher) {
         _fetcher = fetcher;
     }
 
     protected override Instrument ConvertDto(string symbol, SearchResult dto) =>
-        new Instrument {
+        new() {
             Symbol = symbol,
             TradingName = dto.TradingName,
         };
@@ -24,7 +24,7 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
     private readonly Dictionary<string, HashSet<CashProvision>> _cacheBySymbol = new();
     private readonly Dictionary<(string, DateTime), HashSet<CashProvision>> _cacheBySymbolDate = new();
 
-    private CashProvisionFetcher _fetcher;
+    private readonly CashProvisionFetcher _fetcher;
 
     public CashProvisionState(CashProvisionFetcher fetcher) {
         _fetcher = fetcher;
@@ -33,7 +33,7 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
     protected override IBaseFetcher<string, CashProvisionsResult> GetFetcher() => _fetcher;
 
     protected override CashProvision ConvertDto(string symbol, CashProvisionsResult dto) =>
-        new CashProvision {
+        new() {
             Symbol = symbol,
             ReferenceDate = dto.LastDateTimePriorEx,
             ValueCash = dto.ValueCash ?? 0,
@@ -84,7 +84,7 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
 
 public class State {
     private static readonly string _pathName = "DH_FILES";
-    private string _path => Environment.GetEnvironmentVariable(_pathName, Process) ??
+    private static string Path => Environment.GetEnvironmentVariable(_pathName, Process) ??
         Environment.GetEnvironmentVariable(_pathName, Machine) ?? "";
     public InstrumentState Instruments { get; set; }
     public CashProvisionState CashProvisions { get; set; }
@@ -99,7 +99,7 @@ public class State {
 
     public async Task Load() {
         Console.WriteLine("Loading states...");
-        var p = Path.Join(_path, "monitored");
+        var p = System.IO.Path.Join(Path, "monitored");
         if (!File.Exists(p)) return;
         string? s = "";
         using (var reader = new StreamReader(p)) {
@@ -117,7 +117,7 @@ public class State {
 
     public async Task Stop() {
         var s = string.Join(",", MonitoredSymbols);
-        var p = Path.Join(_path, "monitored");
+        var p = System.IO.Path.Join(Path, "monitored");
         using var writer = new StreamWriter(p);
         await writer.WriteLineAsync(s);
     }

@@ -51,7 +51,7 @@ public class CashProvisionSummary {
     public decimal MonthlyAverageCashProvisionPeriod => SafeDivision(Months, TotalCashProvisionCount - 1);
     public decimal YearlyAverageCashProvisionPeriod => SafeDivision(Years, TotalCashProvisionCount - 1);
 
-    private static string _template = @"Summary for {0} from {1} to {2}:
+    private static readonly string _template = @"Summary for {0} from {1} to {2}:
     Last: {17}
     First: {18}
     
@@ -77,7 +77,7 @@ public class CashProvisionSummary {
         LastCashProvision, FirstCashProvision
     );
 
-    private static string _markdownTemplate = @"Summary for *{0}* from _{1}_ to _{2}_
+    private static readonly string _markdownTemplate = @"Summary for *{0}* from _{1}_ to _{2}_
 `-----------------------------------------------------------------------`
 
 \- *Last*: `{17}`
