@@ -19,34 +19,43 @@ public class CashProvision : IBaseModel<Guid> {
 }
 
 // TODO add std deviation and etc.
-public class CashProvisionSummary
-{
+public class CashProvisionSummary {
+    // Key
     public string Symbol { get; init; } = "";
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
+    
+    // Values
+    public CashProvision[] CashProvisions { get; set; } = Array.Empty<CashProvision>();
+    public decimal[] IntervalsInDays { get; set; } = Array.Empty<decimal>();
 
     private int Days => FirstCashProvisionDate.DaysUntill(LastCashProvisionDate);
     private int Months => FirstCashProvisionDate.MonthsUntill(LastCashProvisionDate);
     private int Years => FirstCashProvisionDate.YearsUntill(LastCashProvisionDate);
 
-    public int TotalCashProvisionCount { get; set; }
+    public int TotalCashProvisionCount => CashProvisions.Length;
 
+    // Stats
+    public Stats ValueCashStats => new Stats(CashProvisions.Select(c => c.ValueCash));
     public decimal TotalValueCash { get; set; }
     public decimal AverageValueCash => SafeDivision(TotalValueCash, TotalCashProvisionCount);
     private decimal DailyAverageValueCash => SafeDivision(TotalValueCash, Days);
     private decimal MonthlyAverageValueCash => SafeDivision(TotalValueCash, Months);
     private decimal YearlyAverageValueCash => SafeDivision(TotalValueCash, Years);
 
+    public Stats CorporateActionCashStats => new Stats(CashProvisions.Select(c => c.CorporateActionPrice));
     public decimal TotalCorporateActionPrice { get; set; }
     public decimal AverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, TotalCashProvisionCount);
     private decimal DailyAverageCorporateActionPrice => SafeDivision(TotalValueCash, Days);
     private decimal MonthlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Months);
     private decimal YearlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Years);
 
+    public Stats DateIntervalStats => new Stats(IntervalsInDays);
 
-    public CashProvision? FirstCashProvision { get; set; }
+
+    public CashProvision? FirstCashProvision => CashProvisions.FirstOrDefault();
     private DateTime FirstCashProvisionDate => FirstCashProvision?.ReferenceDate ?? default;
-    public CashProvision? LastCashProvision { get; set; }
+    public CashProvision? LastCashProvision => CashProvisions.LastOrDefault();
     private DateTime LastCashProvisionDate => LastCashProvision?.ReferenceDate ?? default;
     private decimal DailyAverageCashProvisionPeriod => SafeDivision(Days, TotalCashProvisionCount - 1);
     private decimal MonthlyAverageCashProvisionPeriod => SafeDivision(Months, TotalCashProvisionCount - 1);

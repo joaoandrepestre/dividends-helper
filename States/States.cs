@@ -65,16 +65,32 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
         var provisions = values
             .Where(i => i.ReferenceDate >= minDate)
             .Where(i => i.ReferenceDate <= maxDate)
-            .OrderBy(i => i.ReferenceDate);
+            .OrderBy(i => i.ReferenceDate)
+            .ToArray();
 
-        foreach (var p in provisions) {
-            summary.TotalCashProvisionCount++;
+        summary.CashProvisions = provisions;
+        foreach (var p in provisions)
+        {
+            
             summary.TotalValueCash += p.ValueCash;
             summary.TotalCorporateActionPrice += p.CorporateActionPrice;
-
-            summary.FirstCashProvision ??= p;
-            summary.LastCashProvision = p;
         }
+
+        var differentDates = provisions
+            .Select(c => c.ReferenceDate)
+            .Distinct();
+        
+        var intervals = new List<decimal>();
+        var prevDate = DateTime.MinValue;
+        foreach (var date in differentDates) {
+            if (prevDate != DateTime.MinValue) {
+                var days = (decimal) Math.Round((date-prevDate).TotalDays);
+                intervals.Add(days);
+            }
+            prevDate = date;
+        }
+
+        summary.IntervalsInDays = intervals.ToArray();
 
         return summary;
     }
