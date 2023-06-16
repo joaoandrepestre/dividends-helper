@@ -30,13 +30,13 @@ public static class PagedRequestExtensions {
 }
 
 public static class DateExtensions {
-    public static int YearsUntill(this DateTime me, DateTime date) =>
+    public static int YearsUntil(this DateTime me, DateTime date) =>
        (new DateTime(1, 1, 1) + (date - me)).Year - 1;
 
-    public static int MonthsUntill(this DateTime me, DateTime date) =>
+    public static int MonthsUntil(this DateTime me, DateTime date) =>
         ((date.Year - me.Year) * 12) + date.Month - me.Month;
 
-    public static int DaysUntill(this DateTime me, DateTime date) =>
+    public static int DaysUntil(this DateTime me, DateTime date) =>
         (int)(date - me).TotalDays;
 
     public static string DateString(this DateTime me) => me == DateTime.MinValue ?

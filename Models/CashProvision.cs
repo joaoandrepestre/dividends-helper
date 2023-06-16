@@ -29,9 +29,9 @@ public class CashProvisionSummary {
     public CashProvision[] CashProvisions { get; set; } = Array.Empty<CashProvision>();
     public decimal[] IntervalsInDays { get; set; } = Array.Empty<decimal>();
 
-    private int Days => FirstCashProvisionDate.DaysUntill(LastCashProvisionDate);
-    private int Months => FirstCashProvisionDate.MonthsUntill(LastCashProvisionDate);
-    private int Years => FirstCashProvisionDate.YearsUntill(LastCashProvisionDate);
+    private int Days => FirstCashProvisionDate.DaysUntil(LastCashProvisionDate);
+    private int Months => FirstCashProvisionDate.MonthsUntil(LastCashProvisionDate);
+    private int Years => FirstCashProvisionDate.YearsUntil(LastCashProvisionDate);
 
     public int TotalCashProvisionCount => CashProvisions.Length;
 
