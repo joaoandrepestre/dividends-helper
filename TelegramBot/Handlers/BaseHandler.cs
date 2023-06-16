@@ -7,7 +7,12 @@ using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
 namespace DividendsHelper.TelegramBot.Handlers;
-public abstract class BaseHandler<T> where T : BaseTelegramMessage, new() {
+
+public interface IBaseHandler {
+    Task Handle(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken);
+}
+public abstract class BaseHandler<T> : IBaseHandler 
+    where T : BaseTelegramMessage, new() {
     protected readonly State State;
 
     protected BaseHandler(State state) {

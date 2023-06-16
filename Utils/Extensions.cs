@@ -13,13 +13,13 @@ public static class DictionaryExtensions {
 }
 
 public static class PagedRequestExtensions {
-    public static string GetBaseUrl(this RequestType me) => me switch {
+    private static string GetBaseUrl(this RequestType me) => me switch {
         RequestType.Search => "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/",
         RequestType.CashProvisions => "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/",
         _ => "",
     };
 
-    public static string ToBase64Url(this PagedHttpRequest me) {
+    private static string ToBase64Url(this PagedHttpRequest me) {
         var bytes = Encoding.UTF8.GetBytes(me.ToString());
         return Convert.ToBase64String(bytes);
         //.TrimEnd('=').Replace('+', '-').Replace('/', '_');
@@ -48,10 +48,24 @@ public static class PropertyExtensions {
         me.GetCustomAttributes(true).Any(a => a is T);
 
     public static T? GetAttribute<T>(this PropertyInfo me) where T : Attribute =>
-        me.GetCustomAttributes(true)
-        .Select(a => a as T)
-        .Where(t => t is not null)
-        .FirstOrDefault();
+        me
+            .GetCustomAttributes(true)
+            .Select(a => a as T)
+            .FirstOrDefault(t => t is not null);
+
+    public static T? GetAttribute<T>(this Type me) where T : Attribute =>
+        me
+            .GetCustomAttributes(true)
+            .Select(a => a as T)
+            .FirstOrDefault(t => t is not null);
+
+    public static IEnumerable<Type> GetTypesWithAttribute<T>(this Assembly assembly) where T : Attribute {
+        foreach(var type in assembly.GetTypes()) {
+            if (type.GetCustomAttributes(typeof(T), true).Length > 0) {
+                yield return type;
+            }
+        }
+    }
 }
 
 public static class StringExtensions {

@@ -4,6 +4,8 @@ using DividendsHelper.Utils;
 using Telegram.Bot.Types;
 
 namespace DividendsHelper.TelegramBot.Handlers;
+
+[TelegramMessageHandler("/monitor", "Adds a stock to be monitored for dividends")]
 public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
     public MonitorCommandHandler(State state) : base(state) { }
 
@@ -24,6 +26,7 @@ public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
     }
 }
 
+[TelegramMessageHandler("/summary", "Gets stats for a stock and date interval")]
 public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
     public SummaryCommandHandler(State state) : base(state) { }
 

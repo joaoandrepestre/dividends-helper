@@ -1,6 +1,6 @@
 ﻿namespace DividendsHelper.Models;
 
-[System.AttributeUsage(AttributeTargets.Property)]
+[AttributeUsage(AttributeTargets.Property)]
 sealed class TelegramMessageArgumentAttribute : Attribute {
     public int Position { get; }
     public bool Required { get; }
@@ -9,5 +9,15 @@ sealed class TelegramMessageArgumentAttribute : Attribute {
         Position = position;
         Required = required;
         ExambleIfEmpty = example;
+    }
+}
+
+[AttributeUsage((AttributeTargets.Class))]
+sealed class TelegramMessageHandlerAttribute : Attribute {
+    public string Command { get; }
+    public string Description { get; }
+    public TelegramMessageHandlerAttribute(string command, string description) {
+        Command = command;
+        Description = description;
     }
 }
