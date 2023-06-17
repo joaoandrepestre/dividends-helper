@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System.Globalization;
+using System.Reflection;
 using System.Text;
 using DividendsHelper.Models;
 
@@ -12,10 +13,11 @@ public static class DictionaryExtensions {
     }
 }
 
-public static class PagedRequestExtensions {
+public static class HttpExtensions {
     private static string GetBaseUrl(this RequestType me) => me switch {
         RequestType.Search => "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/",
         RequestType.CashProvisions => "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/",
+        RequestType.TradingData => "https://arquivos.b3.com.br/apinegocios/ticker/",
         _ => "",
     };
 
@@ -27,16 +29,42 @@ public static class PagedRequestExtensions {
 
     public static string GetUrl(this PagedHttpRequest me) =>
         $"{me.RequestType.GetBaseUrl()}{me.ToBase64Url()}";
+
+    public static string GetUrl(this UnpagedHttpRequest me)
+    {
+        var args = string.Join("/", me.Params);
+        return $"{me.RequestType.GetBaseUrl()}{args}";
+    }
+
+    public static IEnumerable<T>? ParseResponse<T>(this UnpagedHttpResponse me) where T : class, new() {
+        var props = typeof(T)
+            .GetProperties()
+            .Where(p => p is { CanRead: true, CanWrite: true })
+            .ToDictionary(i => i.Name);
+        var ret = new List<T>();
+        foreach (var value in me.ValuesAsString) {
+            var instance = new T();
+            var columnsAndValues = me.Columns.Zip(value, (c, v) => (c.Name, v));
+            foreach (var (c, v) in columnsAndValues)
+            {
+                if (!props.TryGetValue(c, out var prop)) continue;
+                if (!v.TryParse(out var parsed, prop.PropertyType)) continue;
+                prop.SetValue(instance, parsed);
+            }
+            ret.Add(instance);
+        }
+        return ret;
+    }
 }
 
 public static class DateExtensions {
-    public static int YearsUntill(this DateTime me, DateTime date) =>
-       (new DateTime(1, 1, 1) + (date - me)).Year - 1;
+    public static int YearsUntil(this DateTime me, DateTime date) =>
+       (new DateTime(1, 1, 1) + (date - me)).Year;
 
-    public static int MonthsUntill(this DateTime me, DateTime date) =>
+    public static int MonthsUntil(this DateTime me, DateTime date) =>
         ((date.Year - me.Year) * 12) + date.Month - me.Month;
 
-    public static int DaysUntill(this DateTime me, DateTime date) =>
+    public static int DaysUntil(this DateTime me, DateTime date) =>
         (int)(date - me).TotalDays;
 
     public static string DateString(this DateTime me) => me == DateTime.MinValue ?
@@ -76,6 +104,22 @@ public static class StringExtensions {
         if (t == typeof(DateTime)) {
             var b = DateTime.TryParse(me, out var date);
             ret = date;
+            return b;
+        }
+
+        if (t == typeof(TimeSpan)) {
+            var b = TimeSpan.TryParse(me, out var time);
+            ret = time;
+            return b;
+        }
+        if (t == typeof(decimal)) {
+            var b = decimal.TryParse(me, NumberStyles.Any, CultureInfo.CreateSpecificCulture("en-us"), out var d);
+            ret = d;
+            return b;
+        }
+        if (t == typeof(int)) {
+            var b = int.TryParse(me, out var i);
+            ret = i;
             return b;
         }
         return false;

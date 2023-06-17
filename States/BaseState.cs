@@ -21,11 +21,18 @@ public abstract class BaseState<TId, T, TRequest, TDto>
         Logger.Log($"Loading state {GetType().Name} done.");
     }
 
-    public async Task<IEnumerable<T>> Fetch(TRequest request) {
-        Logger.Log($"Fetching {typeof(T).Name} data for {request}...");
+    protected virtual async Task<int> FetchAndInsert(TRequest request) {
         var res = await GetFetcher().Fetch(request);
-        if (res is null || !res.Any()) return Enumerable.Empty<T>(); ;
-        return Insert(request, res);
+        if (res is null || !res.Any()) return 0;
+        var ret = Insert(request, res);
+        return ret.Count();
+    }
+
+    public async Task<int> Fetch(TRequest request) {
+        Logger.Log($"Fetching {typeof(T).Name} data for {request}...");
+        var count = await FetchAndInsert(request);
+        Logger.Log($"Fetching {typeof(T).Name} data for {request} done. Fetched {count} items.");
+        return count;
     }
 
     protected virtual T Insert(T value) {
@@ -54,14 +61,14 @@ public abstract class BaseState<TId, T, TRequest, TDto>
         return ret;
     }
 
-    public T? Get(TId id)
+    public virtual Task<T?> Get(TId id)
     {
         T? value;
         lock (Locker) {
             if (!_cache.TryGetValue(id, out value))
-                return null;
+                return Task.FromResult<T?>(null);
         }
-        return value;
+        return Task.FromResult<T?>(value);
     }
 }
 

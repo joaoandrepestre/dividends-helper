@@ -33,7 +33,7 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
     protected override SummaryCommand ValidateArgs(SummaryCommand command) {
         if (!command.Valid) return command;
         command.Symbol = command.Symbol.ToUpper();
-        if (command.MaxDate >= command.MinDate) return command;
+        if (command.MaxDate > command.MinDate) return command;
         command.Valid = false;
         command.Error = $"expects _first date_ to be before _second date_ \n\nTry `{command.CommandName()} {command.Symbol} {command.MaxDate.DateString()} {command.MinDate.DateString()}`";
         return command;
@@ -47,5 +47,41 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
         var summary = State.CashProvisions.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
         return Task.FromResult(summary.ToMarkdown());
 
+    }
+}
+
+[TelegramMessageHandler("/simulate", "Simulates an investment in a stock for a certain period")]
+public class SimulationCommandHandler : BaseHandler<SimulationCommand>
+{
+    public SimulationCommandHandler(State state) : base(state) { }
+
+    protected override SimulationCommand ValidateArgs(SimulationCommand command) {
+        if (!command.Valid) return command;
+        command.Symbol = command.Symbol.ToUpper();
+        if (command.Investment <= 0)
+        {
+            command.Valid = false;
+            command.Error = $"expects _investment_ to be greater than 0";
+            return command;
+        }
+        if (command.MaxDate > command.MinDate) return command;
+        command.Valid = false;
+        command.Error = $"expects _first date_ to be before _second date_ \n\nTry `{command.CommandName()} {command.Symbol} {command.MaxDate.DateString()} {command.MinDate.DateString()}`";
+        return command;
+    }
+
+    protected override async Task<string> GetResponse(SimulationCommand command) {
+        if (!State.MonitoredSymbols.Contains(command.Symbol))
+        {
+            return $"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`";
+        }
+
+        var simulation = await State.CashProvisions
+            .Simulate(
+                command.Symbol, 
+                command.MinDate, 
+                command.MaxDate, 
+                command.Investment);
+        return simulation.ToMarkdown();
     }
 }

@@ -9,6 +9,7 @@ public class CashProvision : IBaseModel<Guid> {
     public decimal ValueCash { get; init; }
     public decimal CorporateActionPrice { get; init; }
     public string CorporateAction { get; set; } = "";
+    public decimal Price { get; set; }
 
     public CashProvision() {
         Id = Guid.NewGuid();
@@ -18,86 +19,80 @@ public class CashProvision : IBaseModel<Guid> {
 
 }
 
-// TODO add std deviation and etc.
-public class CashProvisionSummary
-{
+public class CashProvisionSummary {
+    // Key
     public string Symbol { get; init; } = "";
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
+    
+    // Values
+    public CashProvision[] CashProvisions { get; set; } = Array.Empty<CashProvision>();
+    public decimal[] IntervalsInDays { get; set; } = Array.Empty<decimal>();
 
-    private int Days => FirstCashProvisionDate.DaysUntill(LastCashProvisionDate);
-    private int Months => FirstCashProvisionDate.MonthsUntill(LastCashProvisionDate);
-    private int Years => FirstCashProvisionDate.YearsUntill(LastCashProvisionDate);
+    private int Days => FirstCashProvisionDate.DaysUntil(LastCashProvisionDate);
+    private int Months => FirstCashProvisionDate.MonthsUntil(LastCashProvisionDate);
+    private int Years => FirstCashProvisionDate.YearsUntil(LastCashProvisionDate);
 
-    public int TotalCashProvisionCount { get; set; }
+    private int TotalCashProvisionCount => CashProvisions.Length;
 
-    public decimal TotalValueCash { get; set; }
-    public decimal AverageValueCash => SafeDivision(TotalValueCash, TotalCashProvisionCount);
-    private decimal DailyAverageValueCash => SafeDivision(TotalValueCash, Days);
-    private decimal MonthlyAverageValueCash => SafeDivision(TotalValueCash, Months);
-    private decimal YearlyAverageValueCash => SafeDivision(TotalValueCash, Years);
+    // Stats
+    private Stats ValueCashStats => new Stats(CashProvisions.Select(c => c.ValueCash));
 
-    public decimal TotalCorporateActionPrice { get; set; }
-    public decimal AverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, TotalCashProvisionCount);
-    private decimal DailyAverageCorporateActionPrice => SafeDivision(TotalValueCash, Days);
-    private decimal MonthlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Months);
-    private decimal YearlyAverageCorporateActionPrice => SafeDivision(TotalCorporateActionPrice, Years);
+    private Stats CorporateActionCashStats => new Stats(CashProvisions.Select(c => c.CorporateActionPrice));
 
+    private Stats DateIntervalStats => new Stats(IntervalsInDays);
 
-    public CashProvision? FirstCashProvision { get; set; }
+    private CashProvision? FirstCashProvision => CashProvisions.FirstOrDefault();
     private DateTime FirstCashProvisionDate => FirstCashProvision?.ReferenceDate ?? default;
-    public CashProvision? LastCashProvision { get; set; }
+    private CashProvision? LastCashProvision => CashProvisions.LastOrDefault();
     private DateTime LastCashProvisionDate => LastCashProvision?.ReferenceDate ?? default;
-    private decimal DailyAverageCashProvisionPeriod => SafeDivision(Days, TotalCashProvisionCount - 1);
-    private decimal MonthlyAverageCashProvisionPeriod => SafeDivision(Months, TotalCashProvisionCount - 1);
-    private decimal YearlyAverageCashProvisionPeriod => SafeDivision(Years, TotalCashProvisionCount - 1);
+    private decimal DailyAverageCashProvisionPeriod => DateIntervalStats.Average;
+    private decimal MonthlyAverageCashProvisionPeriod => DateIntervalStats.Average / 30;
+    private decimal YearlyAverageCashProvisionPeriod => DateIntervalStats.Average / 365;
 
     private const string Template = @"Summary for {0} from {1} to {2}:
-    Last: {17}
-    First: {18}
+    Last: {3}
+    First: {4}
     
-    Days = {3}, Months = {4}, Years = {5}
-    Period: {14:0.00} days // {15:0.00} months // {16:0.00} years
+    Days = {5}, Months = {6}, Years = {7}
+    Period: {8:0.00} days // {9:0.00} months // {10:0.00} years
 
-    Cash provisions payed = {6}, Total value payed = {7:0.00} R$/unt
+    Cash provisions payed = {11}, Total value payed = {12:0.00} R$/unt
 
-    Daily Avg: Value = {8:0.00} R$/unt, Pct of Mkt Price = {9:0.000}%
-    Monthly Avg: Value = {10:0.00}, Pct of Mkt Price = {11:0.000}%
-    Yearly Avg: Value = {12:0.00}, Pct of Mkt Price = {13:0.000}%
+    Value: Avg = {13:0.00} R$/unt, σ = {14:0.00}%, Mode = {15:0.00}
+    Value / Price: Avg = {16:0.00} R$/unt, σ = {17:0.00}%, Mode = {18:0.00}
 
 ";
 
     public override string ToString() => string.Format(
         Template,
         Symbol, StartDate.DateString(), EndDate.DateString(),
+        LastCashProvision, FirstCashProvision,
         Days, Months, Years,
-        TotalCashProvisionCount, TotalValueCash,
-        DailyAverageValueCash, DailyAverageCorporateActionPrice,
-        MonthlyAverageValueCash, MonthlyAverageCorporateActionPrice,
-        YearlyAverageValueCash, YearlyAverageCorporateActionPrice,
         DailyAverageCashProvisionPeriod, MonthlyAverageCashProvisionPeriod, YearlyAverageCashProvisionPeriod,
-        LastCashProvision, FirstCashProvision
-    );
+        TotalCashProvisionCount, ValueCashStats.Total,
+        ValueCashStats.Average,ValueCashStats.StandardDeviation,ValueCashStats.Mode,
+        CorporateActionCashStats.Average, CorporateActionCashStats.StandardDeviation, CorporateActionCashStats.Mode
+        );
 
     private const string MarkdownTemplate = @"Summary for *{0}* from _{1}_ to _{2}_
-`-----------------------------------------------------------------------`
+`------------------------------------------------------------------`
 
-\- *Last*: `{17}`
-\- *First*: `{18}`
+\- *Last*: `{3}`
+\- *First*: `{4}`
     
-*Days* \= `{3}`, Months \= `{4}`, Years \= `{5}`
-*Period*: `{14:0.00}` _days_ // `{15:0.00}` _months_ // `{16:0.00}` _years_
+*Days* \= `{5}`, Months \= `{6}`, Years \= `{7}`
+*Period*: `{8:0.00}` _days_ // `{9:0.00}` _months_ // `{10:0.00}` _years_
 
-Cash provisions payed \= `{6}`, Total value payed \= `{7:0.00} R$\/unt`
+Cash provisions payed \= `{11}`, Total value payed \= `{12:0.00} R$\/unt`
 
 ```
-|#########|     Value     | Pct of Mkt Price |
-|---------|---------------|------------------|
-| Daily   |  {8:00.00} R$/unt |          {9:00.000}% |
-| Monthly |  {10:00.00} R$/unt |          {11:00.000}% |
-| Yearly  |  {12:00.00} R$/unt |          {13:00.000}% |
+|###################| Average |   σ   |  Mode |
+|-------------------|---------|-------|-------|
+| Value (R$/unt)    |   {13:00.00} | {14:00.00} | {15:00.00} |
+| Value / Price (%) |   {16:00.00} | {17:00.00} | {18:00.00} |
 ```
-`-----------------------------------------------------------------------`
+`------------------------------------------------------------------`
 
 Source: [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/empresas-listadas.htm)
 ";
@@ -105,14 +100,66 @@ Source: [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-va
     public string ToMarkdown() => string.Format(
         MarkdownTemplate,
         Symbol, StartDate.DateString(), EndDate.DateString(),
+        LastCashProvision, FirstCashProvision,
         Days, Months, Years,
-        TotalCashProvisionCount, TotalValueCash,
-        DailyAverageValueCash, DailyAverageCorporateActionPrice,
-        MonthlyAverageValueCash, MonthlyAverageCorporateActionPrice,
-        YearlyAverageValueCash, YearlyAverageCorporateActionPrice,
         DailyAverageCashProvisionPeriod, MonthlyAverageCashProvisionPeriod, YearlyAverageCashProvisionPeriod,
-        LastCashProvision, FirstCashProvision
+        TotalCashProvisionCount, ValueCashStats.Total,
+        ValueCashStats.Average,ValueCashStats.StandardDeviation,ValueCashStats.Mode,
+        CorporateActionCashStats.Average, CorporateActionCashStats.StandardDeviation, CorporateActionCashStats.Mode
     );
 
     private static decimal SafeDivision(decimal a, int b) => b == 0 ? 0 : a / b;
+}
+
+public class Simulation {
+    // Key
+    public string Symbol { get; init; } = "";
+    public DateTime StartDate { get; init; }
+    public DateTime EndDate { get; init; }
+
+    private decimal InitialInvestment { get; init; }
+    public CashProvision[] CashProvisions { get; set; } = Array.Empty<CashProvision>();
+
+    public DateTime FirstDate { get; set; } 
+    public decimal? FirstPrice { get; set; }
+    private decimal PositionQty => Math.Floor(InitialInvestment / (FirstPrice ?? 1));
+    private decimal FirstPositionValue => PositionQty * (FirstPrice ?? 1);
+    private decimal RemainingCash => InitialInvestment - FirstPositionValue;
+    
+    public DateTime FinalDate { get; set; }
+    public decimal? FinalPrice { get; set; }
+    private decimal LastPositionValue => PositionQty * (FinalPrice ?? 1);
+
+    private decimal TotalDividends => CashProvisions.Sum(i => i.ValueCash) * PositionQty;
+    private decimal ResultMoney => LastPositionValue + TotalDividends + RemainingCash;
+    private decimal EffectiveInterestRate => 100 * ((ResultMoney / InitialInvestment) - 1);
+    
+    
+
+    public Simulation(decimal investment)
+    {
+        InitialInvestment = investment;
+    }
+
+    private const string MarkdownTemplate = @"Simulation for *{0}* from _{1}_ to _{2}_
+`------------------------------------------------------------------`
+
+*Initial investment*: `R${3:.00}`
+Position _{4}_: `{5} stocks @ R${6:.00} | R${7:.00}`
+
+Position _{8}_: `{9} stocks @ R${10:.00} | R${11:.00}`
+Dividends received: `R${12:.00}`
+
+*Results*: `R${13:.00} | {14:.000}%` 
+`------------------------------------------------------------------`
+";
+    public string ToMarkdown() => string.Format(
+        MarkdownTemplate,
+        Symbol, StartDate.DateString(), EndDate.DateString(),
+        InitialInvestment,
+        FirstDate.DateString(), PositionQty, FirstPrice, FirstPositionValue,
+        FinalDate.DateString(), PositionQty, FinalPrice, LastPositionValue,
+        TotalDividends,
+        ResultMoney, EffectiveInterestRate);
+
 }

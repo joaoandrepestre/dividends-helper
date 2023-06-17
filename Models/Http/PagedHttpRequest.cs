@@ -26,5 +26,6 @@ public class PagedHttpRequest {
 
 public enum RequestType {
     Search,
-    CashProvisions
+    CashProvisions,
+    TradingData,
 }

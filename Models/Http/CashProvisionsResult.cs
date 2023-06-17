@@ -7,7 +7,7 @@ public class CashProvisionsResult
     public decimal? Ratio { get; set; }
     public string CorporateAction { get; set; } = "";
     public string LastDatePriorEx { get; set; } = "";
-    public decimal? ClosingPricePriorEx { get; set; }
+    public decimal? ClosingPricePriorExDate { get; set; }
     public decimal? QuotedPerShares { get; set; }
     public decimal? CorporateActionPrice { get; set; }
     public DateTime LastDateTimePriorEx { get; set; }
