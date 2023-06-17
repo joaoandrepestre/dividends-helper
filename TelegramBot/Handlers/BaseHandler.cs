@@ -45,10 +45,10 @@ public abstract class BaseHandler<T> : IBaseHandler
             try {
                 arg = args[(int)i];
             } catch (IndexOutOfRangeException) {
-                Logger.Log($"No value passed for argument {prop.Name}", LogLevel.Error);
+                Logger.Log($"No value passed for argument {prop.Name}", LogLevel.Warning);
             }
             if (arg is null || !arg.TryParse(out var v, prop.PropertyType)) {
-                Logger.Log($"Invalid value for type {prop.PropertyType}: {arg}", LogLevel.Error);
+                Logger.Log($"Invalid value for type {prop.PropertyType}: {arg ?? "null"}", LogLevel.Warning);
                 if (att?.Required ?? false) {
                     emptyRequired.Add(prop);
                 }
