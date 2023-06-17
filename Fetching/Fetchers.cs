@@ -3,15 +3,15 @@ using DividendsHelper.States;
 
 namespace DividendsHelper.Fetching;
 
-public class InstrumentFetcher : BaseFetcher<string, SearchResult> {
-    protected override PagedHttpRequest? GetPagedRequest(string symbol, int pageNumber = 1) =>
-        new PagedHttpRequest {
+public class InstrumentFetcher : BasePagedFetcher<string, SearchResult> {
+    protected override Task<PagedHttpRequest?> GetPagedRequest(string symbol, int pageNumber = 1) =>
+        Task.FromResult<PagedHttpRequest?>(new PagedHttpRequest {
             RequestType = RequestType.Search,
             Company = symbol,
             PageNumber = pageNumber,
-        };
+        });
 }
-public class CashProvisionFetcher : BaseFetcher<string, CashProvisionsResult> {
+public class CashProvisionFetcher : BasePagedFetcher<string, CashProvisionsResult> {
 
     // Dependency
     private InstrumentState _instruments;
@@ -20,8 +20,8 @@ public class CashProvisionFetcher : BaseFetcher<string, CashProvisionsResult> {
         _instruments = instrumentState;
     }
 
-    protected override PagedHttpRequest? GetPagedRequest(string symbol, int pageNumber = 1) {
-        var instrument = _instruments.Get(symbol);
+    protected override async Task<PagedHttpRequest?> GetPagedRequest(string symbol, int pageNumber = 1) {
+        var instrument = await _instruments.Get(symbol);
 
         if (instrument == null) return null;
 
@@ -32,4 +32,14 @@ public class CashProvisionFetcher : BaseFetcher<string, CashProvisionsResult> {
             PageNumber = pageNumber,
         };
     }
+}
+
+public class TradingDataFetcher : BaseUnpagedFetcher<SymbolDate, TradingDataResult> {
+    protected override UnpagedHttpRequest? GetUnpagedRequest(SymbolDate request) => new() {
+        RequestType = RequestType.TradingData,
+        Params = new[] {
+            request.Symbol, 
+            $"{request.ReferenceDate.Year:0000}-{request.ReferenceDate.Month:00}-{request.ReferenceDate.Day:00}"
+        },
+    };
 }

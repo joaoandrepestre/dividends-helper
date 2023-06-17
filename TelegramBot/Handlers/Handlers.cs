@@ -70,13 +70,18 @@ public class SimulationCommandHandler : BaseHandler<SimulationCommand>
         return command;
     }
 
-    protected override Task<string> GetResponse(SimulationCommand command) {
-        if (!State.MonitoredSymbols.Contains(command.Symbol)) {
-            return Task.FromResult($"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`");
+    protected override async Task<string> GetResponse(SimulationCommand command) {
+        if (!State.MonitoredSymbols.Contains(command.Symbol))
+        {
+            return $"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`";
         }
 
-        var simulation =
-            State.CashProvisions.Simulate(command.Symbol, command.MinDate, command.MaxDate, command.Investment);
-        return Task.FromResult(simulation.ToMarkdown());
+        var simulation = await State.CashProvisions
+            .Simulate(
+                command.Symbol, 
+                command.MinDate, 
+                command.MaxDate, 
+                command.Investment);
+        return simulation.ToMarkdown();
     }
 }

@@ -120,14 +120,15 @@ public class Simulation {
     private decimal InitialInvestment { get; init; }
     public CashProvision[] CashProvisions { get; set; } = Array.Empty<CashProvision>();
 
-    private CashProvision? FirstCashProvision => CashProvisions.FirstOrDefault();
-    private DateTime FirstCashProvisionDate => FirstCashProvision?.ReferenceDate ?? default;
-    private decimal PositionQty => Math.Floor(InitialInvestment / (FirstCashProvision?.Price ?? 1));
-    private decimal FirstPositionValue => PositionQty * (FirstCashProvision?.Price ?? 1);
+    public DateTime FirstDate { get; set; } 
+    public decimal? FirstPrice { get; set; }
+    private decimal PositionQty => Math.Floor(InitialInvestment / (FirstPrice ?? 1));
+    private decimal FirstPositionValue => PositionQty * (FirstPrice ?? 1);
     private decimal RemainingCash => InitialInvestment - FirstPositionValue;
-    private CashProvision? LastCashProvision => CashProvisions.LastOrDefault();
-    private DateTime LastCashProvisionDate => LastCashProvision?.ReferenceDate ?? default;
-    private decimal LastPositionValue => PositionQty * (LastCashProvision?.Price ?? 1);
+    
+    public DateTime FinalDate { get; set; }
+    public decimal? FinalPrice { get; set; }
+    private decimal LastPositionValue => PositionQty * (FinalPrice ?? 1);
 
     private decimal TotalDividends => CashProvisions.Sum(i => i.ValueCash) * PositionQty;
     private decimal ResultMoney => LastPositionValue + TotalDividends + RemainingCash;
@@ -144,20 +145,20 @@ public class Simulation {
 `------------------------------------------------------------------`
 
 *Initial investment*: `R${3:.00}`
-Position @ _{4}_: `{5} stocks | R${6:.00}`
+Position _{4}_: `{5} stocks @ R${6:.00} | R${7:.00}`
 
-Position @ _{7}_: `{8} stocks | R${9:.00}`
-Dividends received: `R${10:.00}`
+Position _{8}_: `{9} stocks @ R${10:.00} | R${11:.00}`
+Dividends received: `R${12:.00}`
 
-*Results*: `R${11:.00} | {12:.000}%` 
+*Results*: `R${13:.00} | {14:.000}%` 
 `------------------------------------------------------------------`
 ";
     public string ToMarkdown() => string.Format(
         MarkdownTemplate,
         Symbol, StartDate.DateString(), EndDate.DateString(),
         InitialInvestment,
-        FirstCashProvisionDate.DateString(), PositionQty, FirstPositionValue,
-        LastCashProvisionDate.DateString(), PositionQty, LastPositionValue,
+        FirstDate.DateString(), PositionQty, FirstPrice, FirstPositionValue,
+        FinalDate.DateString(), PositionQty, FinalPrice, LastPositionValue,
         TotalDividends,
         ResultMoney, EffectiveInterestRate);
 
