@@ -7,36 +7,34 @@ public abstract class BaseState<TId, T, TRequest, TDto>
     where TId : notnull
     where T : class, IBaseModel<TId> {
 
-    private readonly Dictionary<TId, T> cache = new();
+    private readonly Dictionary<TId, T> _cache = new();
 
-    protected object _locker = new();
-
+    protected readonly object Locker = new();
+    
     protected abstract IBaseFetcher<TRequest, TDto> GetFetcher();
 
     public async Task Load(IEnumerable<TRequest> loadRequests) {
         Logger.Log($"Loading state {GetType().Name}...");
         Logger.Log("Initial fetch...");
-        foreach (var request in loadRequests) {
-            Logger.Log($"Fetching {typeof(T).Name} data for {request}...");
-            await Fetch(request);
-        }
+        await Task.WhenAll(loadRequests.Select(Fetch));
         Logger.Log("Initial fetch done.");
         Logger.Log($"Loading state {GetType().Name} done.");
     }
 
     public async Task<IEnumerable<T>> Fetch(TRequest request) {
+        Logger.Log($"Fetching {typeof(T).Name} data for {request}...");
         var res = await GetFetcher().Fetch(request);
         if (res is null || !res.Any()) return Enumerable.Empty<T>(); ;
         return Insert(request, res);
     }
 
-    public virtual T Insert(T value) {
-        var current = value;
-        lock (_locker) {
-            if (cache.TryGetValue(value.Id, out current)) {
+    protected virtual T Insert(T value) {
+        T? current;
+        lock (Locker) {
+            if (_cache.TryGetValue(value.Id, out current)) {
                 return current;
             }
-            cache.Add(value.Id, value);
+            _cache.Add(value.Id, value);
         }
         if (current != default(T))
             Console.WriteLine($"{GetType().Name}: Duplicate Id {value.Id}");
@@ -45,20 +43,24 @@ public abstract class BaseState<TId, T, TRequest, TDto>
 
     protected abstract T ConvertDto(TRequest req, TDto dto);
     public T Insert(TRequest req, TDto dto) => Insert(ConvertDto(req, dto));
-    public virtual IEnumerable<T> Insert(TRequest req, IEnumerable<TDto> dtos) {
+    public IEnumerable<T> Insert(TRequest req, IEnumerable<TDto> dtos) {
         var values = dtos.Select(dto => ConvertDto(req, dto));
         return Insert(values);
     }
-    public virtual IEnumerable<T> Insert(IEnumerable<T> values) {
+    public IEnumerable<T> Insert(IEnumerable<T> values) {
         var ret = new List<T>();
         foreach (var v in values)
             ret.Add(Insert(v));
         return ret;
     }
 
-    public virtual T? Get(TId id) {
-        if (!cache.TryGetValue(id, out var value))
-            return null;
+    public T? Get(TId id)
+    {
+        T? value;
+        lock (Locker) {
+            if (!_cache.TryGetValue(id, out value))
+                return null;
+        }
         return value;
     }
 }

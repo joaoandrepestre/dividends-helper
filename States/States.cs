@@ -41,10 +41,10 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
             CorporateAction = dto.CorporateAction,
         };
 
-    public override CashProvision Insert(CashProvision value) {
+    protected override CashProvision Insert(CashProvision value) {
         var v = base.Insert(value);
         if (v != value) return value;
-        lock (_locker) {
+        lock (Locker) {
             _cacheBySymbol.GetOrAdd(value.Symbol).Add(value);
             _cacheBySymbolDate.GetOrAdd((value.Symbol, value.ReferenceDate)).Add(value);
         }
@@ -83,13 +83,16 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
 
 
 public class State {
-    private static readonly string _pathName = "DH_FILES";
-    private static string Path => Environment.GetEnvironmentVariable(_pathName, Process) ??
-        Environment.GetEnvironmentVariable(_pathName, Machine) ?? "";
-    public InstrumentState Instruments { get; set; }
-    public CashProvisionState CashProvisions { get; set; }
+    private const string PathName = "DH_FILES";
 
-    public HashSet<string> MonitoredSymbols { get; set; } = new();
+    private static string Path => Environment.GetEnvironmentVariable(PathName, Process) ??
+                                  Environment.GetEnvironmentVariable(PathName, Machine) ?? "";
+    
+    private InstrumentState Instruments { get; }
+    public CashProvisionState CashProvisions { get; }
+    private Timer? ProvisionsSyncer { get; set; }
+
+    public HashSet<string> MonitoredSymbols { get; } = new();
 
     public State() {
         Instruments = new InstrumentState(new InstrumentFetcher());
@@ -112,13 +115,19 @@ public class State {
         MonitoredSymbols.UnionWith(s.Split(",").ToHashSet());
         await Instruments.Load(MonitoredSymbols);
         await CashProvisions.Load(MonitoredSymbols);
+        ProvisionsSyncer = new Timer(new TimerCallback(async _ =>
+        {
+            await Task.WhenAll(MonitoredSymbols.Select(CashProvisions.Fetch));
+        }), null, 30 * 1000, 30 * 60 * 1000);
         Logger.Log("Loading states done.");
     }
 
     public async Task Stop() {
+        if (ProvisionsSyncer is not null)
+            await ProvisionsSyncer.DisposeAsync();
         var s = string.Join(",", MonitoredSymbols);
         var p = System.IO.Path.Join(Path, "monitored");
-        using var writer = new StreamWriter(p);
+        await using var writer = new StreamWriter(p);
         await writer.WriteLineAsync(s);
     }
 
