@@ -31,7 +31,7 @@ public static class PagedRequestExtensions {
 
 public static class DateExtensions {
     public static int YearsUntil(this DateTime me, DateTime date) =>
-       (new DateTime(1, 1, 1) + (date - me)).Year - 1;
+       (new DateTime(1, 1, 1) + (date - me)).Year;
 
     public static int MonthsUntil(this DateTime me, DateTime date) =>
         ((date.Year - me.Year) * 12) + date.Month - me.Month;
@@ -76,6 +76,12 @@ public static class StringExtensions {
         if (t == typeof(DateTime)) {
             var b = DateTime.TryParse(me, out var date);
             ret = date;
+            return b;
+        }
+
+        if (t == typeof(decimal)) {
+            var b = decimal.TryParse(me, out var d);
+            ret = d;
             return b;
         }
         return false;

@@ -39,6 +39,7 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
             ValueCash = dto.ValueCash ?? 0,
             CorporateActionPrice = dto.CorporateActionPrice ?? 0,
             CorporateAction = dto.CorporateAction,
+            Price = dto.ClosingPricePriorExDate ?? 0,
         };
 
     protected override CashProvision Insert(CashProvision value) {
@@ -69,13 +70,6 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
             .ToArray();
 
         summary.CashProvisions = provisions;
-        foreach (var p in provisions)
-        {
-            
-            summary.TotalValueCash += p.ValueCash;
-            summary.TotalCorporateActionPrice += p.CorporateActionPrice;
-        }
-
         var differentDates = provisions
             .Select(c => c.ReferenceDate)
             .Distinct();
@@ -93,6 +87,27 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
         summary.IntervalsInDays = intervals.ToArray();
 
         return summary;
+    }
+
+    public Simulation Simulate(string symbol, DateTime minDate, DateTime maxDate, decimal investment)
+    {
+        var simulation = new Simulation(investment)
+        {
+            Symbol = symbol,
+            StartDate = minDate,
+            EndDate = maxDate,
+        };
+        if (!_cacheBySymbol.TryGetValue(symbol, out var values)) return simulation;
+        
+        var provisions = values
+            .Where(i => i.ReferenceDate >= minDate)
+            .Where(i => i.ReferenceDate <= maxDate)
+            .OrderBy(i => i.ReferenceDate)
+            .ToArray();
+
+        simulation.CashProvisions = provisions;
+
+        return simulation;
     }
 }
 
