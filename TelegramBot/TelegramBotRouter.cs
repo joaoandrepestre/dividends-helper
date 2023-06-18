@@ -24,12 +24,11 @@ public class TelegramBotRouter {
     private TelegramBotClient? _botClient;
     private readonly Dictionary<string, IBaseHandler> _commandHandlers = new();
 
-    public TelegramBotRouter(State state) {
+    public TelegramBotRouter(State? state) {
         RegisterCommandHandlers(state);
     }
 
-    private void RegisterCommandHandlers(State state)
-    {
+    private void RegisterCommandHandlers(State? state) {
         var handlers = typeof(Program).Assembly.GetTypesWithAttribute<TelegramMessageHandlerAttribute>();
         foreach (var handlerType in handlers)
         {

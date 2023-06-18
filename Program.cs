@@ -1,30 +1,42 @@
 ﻿using DividendsHelper.States;
 using DividendsHelper.TelegramBot;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 
 namespace DividendsHelper;
 internal class Program {
-    static async Task Main() {
+    private static State? _state;
+    private static TelegramBotRouter? _router;
+    static async Task Main(string[] args) {
+        IHostBuilder builder = Host.CreateDefaultBuilder(args)
+            .UseWindowsService(options => {
+                options.ServiceName = "DividendsHelper";
+            })
+            .ConfigureServices((context, services) => {
+                services.AddHostedService<Service>();
+            });
 
-        // Start up
+        IHost host = builder.Build();
+        host.Run();
+    }
+
+    static async Task<bool> Start() {
         Logger.Log("Starting Dividends Helper");
-
-        var state = new State();
-        await state.Load();
-
-        var telegram = new TelegramBotRouter(state);
-        if (!(await telegram.Load())) {
+        _state = new State();
+        await _state.Load();
+        _router = new TelegramBotRouter(_state);
+        if (!(await _router.Load())) {
             Logger.Log("Failed to load Telegram Bot. Forcefully shutting down...");
-            return;
+            return false;
         }
-
         Logger.Log("Starting done.");
         Console.WriteLine();
+        return true;
+    }
 
-        Logger.Log("Press enter to quit...");
-
-        Console.ReadLine();
+    static async Task Stop() {
         Logger.Log("Shutting down...");
-        telegram.Stop();
-        await state.Stop();
+        _router.Stop();
+        await _state.Stop();
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System.Globalization;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using DividendsHelper.Models;
 
@@ -123,5 +124,39 @@ public static class StringExtensions {
             return b;
         }
         return false;
+    }
+}
+
+public static class AsyncExtensions {
+    public static CancellationTokenAwaiter GetAwaiter(this CancellationToken ct)
+    {
+        // return our special awaiter
+        return new CancellationTokenAwaiter
+        {
+            CancellationToken = ct
+        };
+    }
+    
+    public struct CancellationTokenAwaiter : INotifyCompletion, ICriticalNotifyCompletion
+    {
+        public CancellationTokenAwaiter(CancellationToken cancellationToken)
+        {
+            CancellationToken = cancellationToken;
+        }
+
+        internal CancellationToken CancellationToken;
+
+        public object GetResult()
+        {
+            if (IsCompleted) throw new OperationCanceledException();
+            else throw new InvalidOperationException("The cancellation token has not yet been cancelled.");
+        }
+
+        public bool IsCompleted => CancellationToken.IsCancellationRequested;
+        
+        public void OnCompleted(Action continuation) =>
+            CancellationToken.Register(continuation);
+        public void UnsafeOnCompleted(Action continuation) =>
+            CancellationToken.Register(continuation);
     }
 }
