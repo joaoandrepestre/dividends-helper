@@ -1,5 +1,4 @@
-﻿using System.Diagnostics;
-using DividendsHelper.Fetching;
+﻿using DividendsHelper.Fetching;
 using DividendsHelper.Models;
 using DividendsHelper.Utils;
 using static System.EnvironmentVariableTarget;
@@ -109,6 +108,51 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         return summary;
     }
 
+    private async Task<(DateTime refDate, decimal price)?> FindFirstPrice(string symbol, DateTime minDate) {
+        if (!_cacheBySymbol.TryGetValue(symbol, out var values)) return null;
+        var firstProvision = values
+            .OrderBy(i => i.ReferenceDate)
+            .First(i => i.ReferenceDate >= minDate);
+        var date = minDate == DateTime.MinValue ? firstProvision.ReferenceDate : minDate;
+        var oldestDate = DateTime.Today.AddDays(-20); // oldest trading data available at B3 website
+        if (date < oldestDate) {
+            // get price from cash provisions
+            return (firstProvision.ReferenceDate, firstProvision.Price);
+        }
+
+        // check at most 1 week
+        TradingData? data = null;
+        for (; date <= date.AddDays(7); date = date.AddDays(1)) {
+            data = await _tradingData.Get(new SymbolDate(symbol, date));
+            if (data is not null) break;
+        }
+
+        if (data is null) return null;
+        return (data.ReferenceDate, data.ClosingPrice);
+    }
+
+    private async Task<(DateTime refDate, decimal price)?> FindLastPrice(string symbol, DateTime maxDate) {
+        if (!_cacheBySymbol.TryGetValue(symbol, out var values)) return null;
+        var lastProvision = values
+            .OrderByDescending(i => i.ReferenceDate)
+            .First(i => i.ReferenceDate <= maxDate);
+        // Find last available trading data
+        var date = maxDate;
+        var oldestDate = DateTime.Today.AddDays(-20); // oldest trading data available at B3 website
+        if (date < oldestDate) {
+            // get price from cash provisions
+            return (lastProvision.ReferenceDate, lastProvision.Price);
+        }
+        TradingData? data = null;
+        for (; date >= date.AddDays(-7); date = date.AddDays(-1)) {
+            data = await _tradingData.Get(new SymbolDate(symbol, date));
+            if (data is not null) break;
+        }
+        
+        if (data is null) return null;
+        return (data.ReferenceDate, data.ClosingPrice);
+    } 
+
     public async Task<Simulation> Simulate(string symbol, DateTime minDate, DateTime maxDate, decimal investment) {
         var simulation = new Simulation(investment) {
             Symbol = symbol,
@@ -124,49 +168,48 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
             .ToArray();
 
         simulation.CashProvisions = provisions;
-        // Find first available trading data
-        TradingData? data = null;
-        var date = minDate == DateTime.MinValue ? provisions.First().ReferenceDate : minDate;
-        var oldestDate = DateTime.Today.AddDays(-20); // oldest trading data available at B3 website
-        if (date < oldestDate) {
-            // get price from cash provisions
-            var firstProvision = provisions.First(p => p.Price > 0);
-            simulation.FirstDate = firstProvision.ReferenceDate;
-            simulation.FirstPrice = firstProvision.Price;
-        }
-        else {
-            while (data == null)
-            {
-                data = await _tradingData.Get(new SymbolDate(symbol, date));
-                date = date.AddDays(1);
-            }
 
-            simulation.FirstDate = data.ReferenceDate;
-            simulation.FirstPrice = data.ClosingPrice;
-        }
+        var first = await FindFirstPrice(symbol, minDate);
+        simulation.FirstDate = first?.refDate ?? minDate;
+        simulation.FirstPrice = first?.price ?? 0;
 
-        // Find last available trading data
-        date = maxDate;
-        if (date < oldestDate) {
-            // get price from cash provisions
-            var lastProvision = provisions.Last();
-            simulation.FinalDate = lastProvision.ReferenceDate;
-            simulation.FinalPrice = lastProvision.Price;
-        }
-        else
-        {
-            data = null;
-            while (data == null)
-            {
-                data = await _tradingData.Get(new SymbolDate(symbol, date));
-                date = date.AddDays(-1);
-            }
-
-            simulation.FinalDate = data.ReferenceDate;
-            simulation.FinalPrice = data.ClosingPrice;
-        }
-
+        var last = await FindLastPrice(symbol, maxDate);
+        simulation.FinalDate = last?.refDate ?? maxDate;
+        simulation.FinalPrice = last?.price ?? 0;
+        
         return simulation;
+    }
+    
+    // knapsack problem
+    // maximize sum(Qty * Total Value Cash) foreach symbols
+    // where sum(Qty * First Price) foreach symbol <= investment
+    public async Task<Portfolio> BuildPortfolio(string[] symbols, DateTime minDate, DateTime maxDate, decimal investment) {
+        var portfolio = new Portfolio {
+            Symbols = symbols,
+            StartDate = minDate,
+            EndDate = maxDate,
+        };
+        
+        // find initial price foreach symbol
+        var prices = new List<decimal>();
+        var totalCash = new List<decimal>();
+        foreach (var symbol in symbols) {
+            var p = ((await FindFirstPrice(symbol, minDate))?.price ?? 1) * 100;
+            var v = ((await Simulate(symbol, minDate, maxDate, p)).ResultMoney) * 100;
+            prices.Add(p);
+            totalCash.Add(v);
+        }
+        
+        // re-examine algo choice for larger input sizes
+        var qty = Algorithms.Knapsack(totalCash.ToArray(), prices.ToArray(), investment * 100, Algorithms.KnapsackAlgo.Dynamic);
+        
+        portfolio.Simulations = new Dictionary<string, Simulation>();
+        for (var i = 0; i < symbols.Length; i++) {
+            portfolio.Simulations.Add(symbols[i], await Simulate(symbols[i], minDate, maxDate, prices[i]*qty[i] / 100));
+        }
+
+        //portfolio.Simulations = simulations.ToDictionary(s => s.Symbol);
+        return portfolio;
     }
 }
 
@@ -204,7 +247,7 @@ public class TradingDataState : BaseState<SymbolDate, TradingData, SymbolDate, T
 public class State {
     private const string PathName = "DH_FILES";
 
-    private static string Path => Environment.GetEnvironmentVariable(PathName, EnvironmentVariableTarget.Process) ??
+    private static string Path => Environment.GetEnvironmentVariable(PathName, Process) ??
                                   Environment.GetEnvironmentVariable(PathName, Machine) ?? "";
     
     private InstrumentState Instruments { get; }

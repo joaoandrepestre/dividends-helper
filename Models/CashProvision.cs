@@ -166,3 +166,11 @@ Dividends received: `R${12:.00}`
         ResultMoney, EffectiveInterestRate, YearlyPctInterestRate);
 
 }
+
+public class Portfolio {
+    public string[] Symbols { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    
+    public Dictionary<string, Simulation> Simulations { get; set; }
+}
