@@ -1,6 +1,10 @@
 namespace DividendsHelper.Models;
 
-public record struct SymbolDate(string Symbol, DateTime ReferenceDate);
+public readonly record struct SymbolDate(string Symbol, DateTime ReferenceDate) {
+    public override string ToString() {
+        return $"{Symbol}|{ReferenceDate}";
+    }
+};
 public class TradingData : IBaseModel<SymbolDate>
 {
     public SymbolDate Id => new(Symbol, ReferenceDate);
