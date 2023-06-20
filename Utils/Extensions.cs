@@ -5,6 +5,11 @@ using System.Text;
 using DividendsHelper.Models;
 
 namespace DividendsHelper.Utils;
+
+public static class NumberExtensions {
+    public static decimal ConvertInterestRate(this decimal me, int originNumberOfDays, int targetNumberOfDays) =>
+        100m * ((decimal)Math.Pow((double)(1 + me / 100), (double)targetNumberOfDays / originNumberOfDays) - 1);
+}
 public static class DictionaryExtensions {
     public static HashSet<T> GetOrAdd<TKey, T>(this Dictionary<TKey, HashSet<T>> me, TKey key) where TKey : notnull {
         if (me.TryGetValue(key, out var value)) return value;

@@ -124,15 +124,16 @@ public class Simulation {
     public decimal? FirstPrice { get; set; }
     private decimal PositionQty => Math.Floor(InitialInvestment / (FirstPrice ?? 1));
     private decimal FirstPositionValue => PositionQty * (FirstPrice ?? 1);
-    private decimal RemainingCash => InitialInvestment - FirstPositionValue;
+    public decimal RemainingCash => InitialInvestment - FirstPositionValue;
     
     public DateTime FinalDate { get; set; }
     public decimal? FinalPrice { get; set; }
     private decimal LastPositionValue => PositionQty * (FinalPrice ?? 1);
 
     private decimal TotalDividends => CashProvisions.Sum(i => i.ValueCash) * PositionQty;
-    private decimal ResultMoney => LastPositionValue + TotalDividends + RemainingCash;
-    private decimal EffectiveInterestRate => 100 * ((ResultMoney / InitialInvestment) - 1);
+    public decimal ResultMoney => LastPositionValue + TotalDividends;
+    private decimal EffectiveInterestRate => ((ResultMoney / InitialInvestment) - 1)*100;
+    private decimal YearlyPctInterestRate => EffectiveInterestRate.ConvertInterestRate(FirstDate.DaysUntil(FinalDate), 365);
     
     
 
@@ -150,7 +151,7 @@ Position _{4}_: `{5} stocks @ R${6:.00} | R${7:.00}`
 Position _{8}_: `{9} stocks @ R${10:.00} | R${11:.00}`
 Dividends received: `R${12:.00}`
 
-*Results*: `R${13:.00} | {14:.000}%` 
+*Results*: `R${13:.00} | {14:.000}% | {15:.000}% a.a.` 
 `------------------------------------------------------------------`
 ";
     public string ToMarkdown() => string.Format(
@@ -160,6 +161,6 @@ Dividends received: `R${12:.00}`
         FirstDate.DateString(), PositionQty, FirstPrice, FirstPositionValue,
         FinalDate.DateString(), PositionQty, FinalPrice, LastPositionValue,
         TotalDividends,
-        ResultMoney, EffectiveInterestRate);
+        ResultMoney, EffectiveInterestRate, YearlyPctInterestRate);
 
 }
