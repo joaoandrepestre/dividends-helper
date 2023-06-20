@@ -1,4 +1,5 @@
-﻿using DividendsHelper.Fetching;
+﻿using System.Diagnostics;
+using DividendsHelper.Fetching;
 using DividendsHelper.Models;
 using DividendsHelper.Utils;
 using static System.EnvironmentVariableTarget;
@@ -20,7 +21,7 @@ public class InstrumentState : BaseState<string, Instrument, string, SearchResul
     protected override IBaseFetcher<string, SearchResult> GetFetcher() => _fetcher;
 }
 
-public class CashProvisionState : BaseState<Guid, CashProvision, string, CashProvisionsResult> {
+public class CashProvisionState : BaseState<CashProvisionId, CashProvision, string, CashProvisionsResult> {
     private readonly Dictionary<string, HashSet<CashProvision>> _cacheBySymbol = new();
     private readonly Dictionary<(string, DateTime), HashSet<CashProvision>> _cacheBySymbolDate = new();
 
@@ -52,6 +53,23 @@ public class CashProvisionState : BaseState<Guid, CashProvision, string, CashPro
             _cacheBySymbolDate.GetOrAdd((value.Symbol, value.ReferenceDate)).Add(value);
         }
         return v;
+    }
+
+    public override IEnumerable<CashProvision> Insert(string symbol, IEnumerable<CashProvisionsResult> dtos) {
+        var grouped = dtos
+            .GroupBy(dto => new CashProvisionId(symbol, dto.LastDateTimePriorEx, dto.CorporateAction));
+        var consolidated = new List<CashProvision>();
+        foreach (var g in grouped) {
+            consolidated.Add(new CashProvision {
+                Symbol = g.Key.Symbol,
+                ReferenceDate = g.Key.ReferenceDate,
+                CorporateAction = g.Key.CorporateAction,
+                Price = g.FirstOrDefault()?.ClosingPricePriorExDate ?? 0,
+                ValueCash = g.Sum(i => i.ValueCash ?? 0),
+                CorporateActionPrice = g.Sum(i => i.CorporateActionPrice ?? 0),
+            });
+        }
+        return Insert(consolidated);
     }
 
     public CashProvisionSummary GetSummary(string symbol) => GetSummary(symbol, new DateTime(1, 1, 1));
@@ -186,7 +204,7 @@ public class TradingDataState : BaseState<SymbolDate, TradingData, SymbolDate, T
 public class State {
     private const string PathName = "DH_FILES";
 
-    private static string Path => Environment.GetEnvironmentVariable(PathName, Process) ??
+    private static string Path => Environment.GetEnvironmentVariable(PathName, EnvironmentVariableTarget.Process) ??
                                   Environment.GetEnvironmentVariable(PathName, Machine) ?? "";
     
     private InstrumentState Instruments { get; }

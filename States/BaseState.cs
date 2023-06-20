@@ -50,7 +50,7 @@ public abstract class BaseState<TId, T, TRequest, TDto>
 
     protected abstract T ConvertDto(TRequest req, TDto dto);
     public T Insert(TRequest req, TDto dto) => Insert(ConvertDto(req, dto));
-    public IEnumerable<T> Insert(TRequest req, IEnumerable<TDto> dtos) {
+    public virtual IEnumerable<T> Insert(TRequest req, IEnumerable<TDto> dtos) {
         var values = dtos.Select(dto => ConvertDto(req, dto));
         return Insert(values);
     }

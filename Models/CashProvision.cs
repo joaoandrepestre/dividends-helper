@@ -2,19 +2,16 @@
 
 namespace DividendsHelper.Models;
 
-public class CashProvision : IBaseModel<Guid> {
-    public Guid Id { get; }
+public readonly record struct CashProvisionId(string Symbol, DateTime ReferenceDate, string CorporateAction);
+public class CashProvision : IBaseModel<CashProvisionId> {
+    public CashProvisionId Id => new(Symbol, ReferenceDate, CorporateAction);
     public string Symbol { get; init; } = "";
     public DateTime ReferenceDate { get; init; } = DateTime.Today;
     public decimal ValueCash { get; init; }
     public decimal CorporateActionPrice { get; init; }
     public string CorporateAction { get; set; } = "";
     public decimal Price { get; set; }
-
-    public CashProvision() {
-        Id = Guid.NewGuid();
-    }
-
+    
     public override string ToString() => $"{Symbol} | {ReferenceDate.DateString()}: Value = {ValueCash:0.00} R$/unt, Pct of Mkt Price = {CorporateActionPrice:0.000}%";
 
 }
