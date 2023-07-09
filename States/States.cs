@@ -64,7 +64,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
                 Symbol = g.Key.Symbol,
                 ReferenceDate = g.Key.ReferenceDate,
                 CorporateAction = g.Key.CorporateAction,
-                Price = g.FirstOrDefault()?.ClosingPricePriorExDate ?? 0,
+                Price = g.FirstOrDefault(i => i.ClosingPricePriorExDate > 0)?.ClosingPricePriorExDate ?? 0,
                 ValueCash = g.Sum(i => i.ValueCash ?? 0),
                 CorporateActionPrice = g.Sum(i => i.CorporateActionPrice ?? 0),
             });
@@ -130,7 +130,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         var oldestDate = DateTime.Today.AddDays(-20); // oldest trading data available at B3 website
         if (date < oldestDate) {
             // get price from cash provisions
-            var firstProvision = provisions.First();
+            var firstProvision = provisions.First(p => p.Price > 0);
             simulation.FirstDate = firstProvision.ReferenceDate;
             simulation.FirstPrice = firstProvision.Price;
         }

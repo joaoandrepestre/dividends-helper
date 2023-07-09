@@ -10,7 +10,12 @@ public class CashProvision : IBaseModel<CashProvisionId> {
     public decimal ValueCash { get; init; }
     public decimal CorporateActionPrice { get; init; }
     public string CorporateAction { get; set; } = "";
-    public decimal Price { get; set; }
+    private decimal? _price;
+
+    public decimal Price {
+        get => _price ?? (ValueCash / CorporateActionPrice) * 100; 
+        set => _price = value;
+    }
     
     public override string ToString() => $"{Symbol} | {ReferenceDate.DateString()}: Value = {ValueCash:0.00} R$/unt, Pct of Mkt Price = {CorporateActionPrice:0.000}%";
 
