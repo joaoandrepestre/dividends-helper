@@ -85,3 +85,33 @@ public class SimulationCommandHandler : BaseHandler<SimulationCommand>
         return simulation.ToMarkdown();
     }
 }
+
+[TelegramMessageHandler("/portfolio", "Builds a portfolio from monitored assets to maximize earnings over a period")]
+public class PortfolioCommandHandler : BaseHandler<PortfolioCommand> {
+    public PortfolioCommandHandler(State state) : base(state) { }
+
+    protected override PortfolioCommand ValidateArgs(PortfolioCommand command) {
+        if (!command.Valid) return command;
+        if (command.Investment <= 0)
+        {
+            command.Valid = false;
+            command.Error = $"expects _investment_ to be greater than 0";
+            return command;
+        }
+        if (command.MaxDate > command.MinDate) return command;
+        command.Valid = false;
+        command.Error = $"expects _first date_ to be before _second date_ \n\nTry `{command.CommandName()} {command.Limit} {command.Investment} {command.MaxDate.DateString()} {command.MinDate.DateString()}`";
+        return command;
+    }
+
+    protected override async Task<string> GetResponse(PortfolioCommand command) {
+        var portfolio = await State.CashProvisions
+            .BuildPortfolio(
+                State.MonitoredSymbols.ToArray(),
+                command.MinDate,
+                command.MaxDate,
+                command.Investment,
+                command.Limit / 100);
+        return portfolio.ToMarkdown();
+    }
+}
