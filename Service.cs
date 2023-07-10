@@ -21,7 +21,6 @@ public class Service : BackgroundService {
             }
 
             Logger.Log("Starting done.");
-            var p = await _state.CashProvisions.BuildPortfolio(_state.MonitoredSymbols.ToArray(), DateTime.Today.AddYears(-5), DateTime.Today,10000);
             await stoppingToken;
         }
         catch (TaskCanceledException) { }

@@ -7,18 +7,18 @@ public static class Algorithms {
         Fptas,
     }
 
-    public static int[] Knapsack(decimal[] values, decimal[] weights, decimal maxWeight, KnapsackAlgo algo) =>
+    public static int[] Knapsack(decimal[] values, decimal[] weights, decimal maxWeight, decimal limit, KnapsackAlgo algo) =>
         algo switch {
             KnapsackAlgo.Dynamic => KnapsackDynamic(
                 values.Select(v => (int) Math.Floor(v)).ToArray(),
                 weights.Select(w => (int) Math.Floor(w)).ToArray(), 
-                (int) Math.Floor(maxWeight)),
-            KnapsackAlgo.Greedy => KnapsackGreedy(values, weights, maxWeight),
-            KnapsackAlgo.Fptas => KnapsackFptas(values, weights, maxWeight),
+                (int) Math.Floor(maxWeight), limit),
+            KnapsackAlgo.Greedy => KnapsackGreedy(values, weights, maxWeight, limit),
+            KnapsackAlgo.Fptas => KnapsackFptas(values, weights, maxWeight, limit),
             _ => throw new NotImplementedException($"Algorithm {algo} is not implemented"),
         };
 
-    private static int[] KnapsackDynamic(int[] values, int[] weights, int maxWeight) {
+    private static int[] KnapsackDynamic(int[] values, int[] weights, int maxWeight, decimal limit) {
         var m = new int[maxWeight+1];
         
         for (var i = 0; i <= maxWeight; i++) {
@@ -45,28 +45,30 @@ public static class Algorithms {
         return solution;
     }
 
-    private static int[] KnapsackGreedy(decimal[] values, decimal[] weights, decimal maxWeight) {
+    private static int[] KnapsackGreedy(decimal[] values, decimal[] weights, decimal maxWeight, decimal limit) {
         var valueOverWeight = values
             .Select((v, index) => (index, v, weights[index], v / weights[index]))
             .OrderByDescending(i => i.Item4)
             .Select(i => (i.index, weights[i.index]));
         var solution = new int[values.Length];
         var W = maxWeight;
+        var maxVol = limit * maxWeight;
         foreach (var (i, w) in valueOverWeight) {
-            var qty = (int)Math.Floor(W / w);
+            var maxQty = (int)Math.Floor(maxVol / w);
+            var qty = (int)Math.Min(Math.Floor(W / w), maxQty);
             solution[i] = qty;
             W -= qty * w;
         }
         return solution;
     }
 
-    private static int[] KnapsackFptas(decimal[] values, decimal[] weights, decimal maxWeight) {
+    private static int[] KnapsackFptas(decimal[] values, decimal[] weights, decimal maxWeight, decimal limit) {
         var epsilon = 0.001m;
         var P = values.Max();
         var K = epsilon * P / values.Length;
         var adjustedValues = values.Select(v => (int) Math.Floor(v / K)).ToArray();
         var adjustedWeights = weights.Select(w => (int) Math.Floor(w)).ToArray();
-        var dynamic = KnapsackDynamic(adjustedValues, adjustedWeights, (int) Math.Floor(maxWeight));
+        var dynamic = KnapsackDynamic(adjustedValues, adjustedWeights, (int) Math.Floor(maxWeight), limit);
         return dynamic;
     }
 }

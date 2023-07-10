@@ -154,10 +154,11 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
     } 
 
     public async Task<Simulation> Simulate(string symbol, DateTime minDate, DateTime maxDate, decimal investment) {
-        var simulation = new Simulation(investment) {
+        var simulation = new Simulation {
             Symbol = symbol,
             StartDate = minDate,
             EndDate = maxDate,
+            InitialInvestment = investment,
         };
         if (!_cacheBySymbol.TryGetValue(symbol, out var values)) return simulation;
         
@@ -183,11 +184,12 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
     // knapsack problem
     // maximize sum(Qty * Total Value Cash) foreach symbols
     // where sum(Qty * First Price) foreach symbol <= investment
-    public async Task<Portfolio> BuildPortfolio(string[] symbols, DateTime minDate, DateTime maxDate, decimal investment) {
+    public async Task<Portfolio> BuildPortfolio(string[] symbols, DateTime minDate, DateTime maxDate, decimal investment, decimal limit) {
         var portfolio = new Portfolio {
             Symbols = symbols,
             StartDate = minDate,
             EndDate = maxDate,
+            InitialInvestment = investment,
         };
         
         // find initial price foreach symbol
@@ -201,14 +203,13 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         }
         
         // re-examine algo choice for larger input sizes
-        var qty = Algorithms.Knapsack(totalCash.ToArray(), prices.ToArray(), investment * 100, Algorithms.KnapsackAlgo.Dynamic);
+        var qty = Algorithms.Knapsack(totalCash.ToArray(), prices.ToArray(), investment * 100, limit, Algorithms.KnapsackAlgo.Greedy);
         
         portfolio.Simulations = new Dictionary<string, Simulation>();
         for (var i = 0; i < symbols.Length; i++) {
             portfolio.Simulations.Add(symbols[i], await Simulate(symbols[i], minDate, maxDate, prices[i]*qty[i] / 100));
         }
 
-        //portfolio.Simulations = simulations.ToDictionary(s => s.Symbol);
         return portfolio;
     }
 }
