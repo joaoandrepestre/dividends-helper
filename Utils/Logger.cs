@@ -1,5 +1,5 @@
-﻿namespace DividendsHelper;
-public class Logger {
+﻿namespace DividendsHelper.Utils;
+public static class Logger {
     public static void Log(string message, LogLevel logLevel = LogLevel.Info) {
         var color = Console.ForegroundColor;
         Console.ForegroundColor = logLevel switch

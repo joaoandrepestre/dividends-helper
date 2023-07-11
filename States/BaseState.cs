@@ -1,5 +1,6 @@
 ﻿using DividendsHelper.Fetching;
 using DividendsHelper.Models;
+using DividendsHelper.Utils;
 
 namespace DividendsHelper.States;
 

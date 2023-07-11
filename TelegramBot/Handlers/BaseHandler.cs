@@ -5,6 +5,7 @@ using DividendsHelper.Utils;
 using Telegram.Bot;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using static DividendsHelper.Utils.LogLevel;
 
 namespace DividendsHelper.TelegramBot.Handlers;
 
@@ -45,10 +46,10 @@ public abstract class BaseHandler<T> : IBaseHandler
             try {
                 arg = args[(int)i];
             } catch (IndexOutOfRangeException) {
-                Logger.Log($"No value passed for argument {prop.Name}", LogLevel.Warning);
+                Logger.Log($"No value passed for argument {prop.Name}", Warning);
             }
             if (arg is null || !arg.TryParse(out var v, prop.PropertyType)) {
-                Logger.Log($"Invalid value for type {prop.PropertyType}: {arg ?? "null"}", LogLevel.Warning);
+                Logger.Log($"Invalid value for type {prop.PropertyType}: {arg ?? "null"}", Warning);
                 if (att?.Required ?? false) {
                     emptyRequired.Add(prop);
                 }

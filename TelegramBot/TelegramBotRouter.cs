@@ -8,6 +8,7 @@ using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 using static System.EnvironmentVariableTarget;
+using static DividendsHelper.Utils.LogLevel;
 
 namespace DividendsHelper.TelegramBot;
 public class TelegramBotRouter {
@@ -60,7 +61,7 @@ public class TelegramBotRouter {
     public async Task<bool> Load() {
         Logger.Log("Loading Telegram Bot...");
         if (string.IsNullOrEmpty(AccessToken)) {
-            Logger.Log($"ERROR - Could not retrieve access token. Remember to set the environment variable {TokenName}.", LogLevel.Error);
+            Logger.Log($"ERROR - Could not retrieve access token. Remember to set the environment variable {TokenName}.", Error);
             return false;
         }
 
@@ -110,7 +111,7 @@ public class TelegramBotRouter {
             _ => exception.ToString()
         };
 
-        Logger.Log(errorMessage, LogLevel.Error);
+        Logger.Log(errorMessage, Error);
         return Task.CompletedTask;
     }
 }
