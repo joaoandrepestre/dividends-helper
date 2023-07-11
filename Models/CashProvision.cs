@@ -1,4 +1,5 @@
-﻿using DividendsHelper.Utils;
+﻿using System.Text;
+using DividendsHelper.Utils;
 
 namespace DividendsHelper.Models;
 
@@ -113,36 +114,36 @@ Source: [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-va
     private static decimal SafeDivision(decimal a, int b) => b == 0 ? 0 : a / b;
 }
 
-public class Simulation {
+public abstract class Investment {
+    public decimal InitialInvestment { get; set; }
+    public abstract decimal ResultMoney { get; }
+    protected abstract int Period { get; }
+    protected decimal EffectiveInterestRate => InitialInvestment == 0 ? 0 : ((ResultMoney / InitialInvestment) - 1)*100;
+    protected decimal YearlyPctInterestRate => InitialInvestment == 0 ? 0 : EffectiveInterestRate.ConvertInterestRate(Period, 365);
+}
+
+public class Simulation : Investment{
     // Key
     public string Symbol { get; init; } = "";
     public DateTime StartDate { get; init; }
     public DateTime EndDate { get; init; }
 
-    private decimal InitialInvestment { get; init; }
     public CashProvision[] CashProvisions { get; set; } = Array.Empty<CashProvision>();
 
     public DateTime FirstDate { get; set; } 
     public decimal? FirstPrice { get; set; }
-    private decimal PositionQty => Math.Floor(InitialInvestment / (FirstPrice ?? 1));
-    private decimal FirstPositionValue => PositionQty * (FirstPrice ?? 1);
+    public decimal PositionQty => Math.Floor(InitialInvestment / (FirstPrice ?? 1));
+    public decimal FirstPositionValue => PositionQty * (FirstPrice ?? 0);
     public decimal RemainingCash => InitialInvestment - FirstPositionValue;
     
     public DateTime FinalDate { get; set; }
     public decimal? FinalPrice { get; set; }
-    private decimal LastPositionValue => PositionQty * (FinalPrice ?? 1);
+    public decimal LastPositionValue => PositionQty * (FinalPrice ?? 1);
 
-    private decimal TotalDividends => CashProvisions.Sum(i => i.ValueCash) * PositionQty;
-    public decimal ResultMoney => LastPositionValue + TotalDividends;
-    private decimal EffectiveInterestRate => ((ResultMoney / InitialInvestment) - 1)*100;
-    private decimal YearlyPctInterestRate => EffectiveInterestRate.ConvertInterestRate(FirstDate.DaysUntil(FinalDate), 365);
-    
-    
+    public decimal TotalDividends => CashProvisions.Sum(i => i.ValueCash) * PositionQty;
+    public override decimal ResultMoney => LastPositionValue + TotalDividends;
 
-    public Simulation(decimal investment)
-    {
-        InitialInvestment = investment;
-    }
+    protected override int Period => FirstDate.DaysUntil(FinalDate);
 
     private const string MarkdownTemplate = @"Simulation for *{0}* from _{1}_ to _{2}_
 `------------------------------------------------------------------`
@@ -165,4 +166,100 @@ Dividends received: `R${12:.00}`
         TotalDividends,
         ResultMoney, EffectiveInterestRate, YearlyPctInterestRate);
 
+    private const string PositionMarkdownTemplate = @"| {0} | {1} | {2:.00} | {3} | {4:.00} |";
+    public string InitialPositionMarkdown() => string.Format(
+        PositionMarkdownTemplate,
+        FirstDate.DateString(), Symbol, FirstPrice, PositionQty, FirstPositionValue);
+    public string FinalPositionMarkdown() => string.Format(
+        PositionMarkdownTemplate,
+        FinalDate.DateString(), Symbol, FinalPrice, PositionQty, LastPositionValue);
+
+    private const string DividendsMarkdownTemplate = @"| {0} | {1} |";
+    public string DividendsMarkdown() => string.Format(
+        DividendsMarkdownTemplate,
+        Symbol, TotalDividends);
+
+
+}
+
+public class Portfolio : Investment {
+    public string[] Symbols { get; set; }
+    public DateTime StartDate { get; set; }
+    public DateTime EndDate { get; set; }
+    
+    public Dictionary<string, Simulation> Simulations { get; set; }
+    private decimal TotalQty => Simulations.Sum(i => i.Value.PositionQty);
+    private decimal InitialValue => Simulations.Sum(i => i.Value.FirstPositionValue);
+    private decimal FinalValue => Simulations.Sum(i => i.Value.LastPositionValue);
+    private decimal TotalDividends => Simulations.Sum(i => i.Value.TotalDividends);
+    public override decimal ResultMoney => Simulations.Sum(i => i.Value.ResultMoney);
+
+    protected override int Period => StartDate.DaysUntil(EndDate);
+
+    private string InitialPositionTable() {
+        var sb = new StringBuilder();
+        foreach (var (_, s) in Simulations) {
+            if (s.PositionQty > 0)
+                sb.AppendLine(s.InitialPositionMarkdown());
+        }
+        return sb.ToString();
+    }
+
+    private string FinalPositionTable() {
+        var sb = new StringBuilder();
+        foreach (var (_, s) in Simulations) {
+            if (s.PositionQty > 0)
+                sb.AppendLine(s.FinalPositionMarkdown());
+        }
+        return sb.ToString();   
+    }
+    private string DividendsTable() {
+        var sb = new StringBuilder();
+        foreach (var (_, s) in Simulations) {
+            if (s.PositionQty > 0)
+                sb.AppendLine(s.DividendsMarkdown());
+        }
+        return sb.ToString(); 
+    }
+
+    private const string MarkdownTemplate = @"Portfolio from _{0}_ to _{1}_
+`------------------------------------------------------------------`
+*Initial investment*: `R${2:.00}`
+*Initial Positions:*
+```
+| Date | Symbol | Price | Qty | Value |
+{3}
+Total: {4} stocks | R${5:.00}
+```
+
+*Final Positions:*
+```
+| Date | Symbol | Price (R$) | Qty | Value (R$) |
+{6}
+Total: {7} stocks | R${8:.00}
+```
+
+*Dividends received:*
+```
+| Symbol | Dividends |
+{9}
+Total: {10}
+```
+
+*Results*: `R${11:.00} | {12:.000}% | {13:.000}% a.a.` 
+`------------------------------------------------------------------`
+";
+
+    public string ToMarkdown() => string.Format(
+        MarkdownTemplate,
+        StartDate.DateString(), EndDate.DateString(),
+        InitialInvestment,
+        InitialPositionTable(),
+        TotalQty, InitialValue,
+        FinalPositionTable(),
+        TotalQty, FinalValue,
+        DividendsTable(),
+        TotalDividends,
+        ResultMoney, EffectiveInterestRate, YearlyPctInterestRate
+        );
 }
