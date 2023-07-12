@@ -1,26 +1,22 @@
 using DividendsHelper.Models;
 using DividendsHelper.States;
-using DividendsHelper.Utils;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DividendsHelper.Controllers; 
+namespace DividendsHelper.Controllers;
 
-[ApiController]
 [Route("instruments/[action]")]
-public class InstrumentController : ControllerBase {
+public class InstrumentController : BaseApiController<string, Instrument> {
     private readonly CoreState _coreState;
 
-    public InstrumentController(CoreState coreState) {
+    public InstrumentController(CoreState coreState, InstrumentState state) : base(state) {
         _coreState = coreState;
     }
-    public string Monitored() {
-        var res = string.Join(',', _coreState.MonitoredSymbols);
-        Logger.Log(res);
-        return res;
-    }
+    public string Monitored() =>
+        string.Join(',', _coreState.MonitoredSymbols);
 
-    public async Task<CashProvisionSummary?> Monitor(string symbol) {
-        if (!await _coreState.Monitor(symbol)) return null;
-        return _coreState.CashProvisions.GetSummary(symbol, DateTime.Today.AddYears(-1));
+    [HttpPost]
+    public async Task<CashProvisionSummary?> Monitor([Bind("Symbol")] Instrument i) {
+        if (!await _coreState.Monitor(i.Symbol)) return null;
+        return _coreState.CashProvisions.GetSummary(i.Symbol, DateTime.Today.AddYears(-1));
     }
 }

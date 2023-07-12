@@ -1,10 +1,17 @@
-﻿using DividendsHelper.Fetching;
+﻿using System.Runtime.InteropServices;
+using DividendsHelper.Fetching;
 using DividendsHelper.Models;
 using DividendsHelper.Utils;
 
 namespace DividendsHelper.States;
 
-public abstract class BaseState<TId, T, TRequest, TDto>
+public interface IBaseState<TId, T>
+    where TId : notnull
+    where T : IBaseModel<TId> {
+    Task<T?> Get(TId id);
+}
+
+public abstract class BaseState<TId, T, TRequest, TDto> : IBaseState<TId, T>
     where TId : notnull
     where T : class, IBaseModel<TId> {
 
