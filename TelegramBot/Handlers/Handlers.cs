@@ -7,7 +7,7 @@ namespace DividendsHelper.TelegramBot.Handlers;
 
 [TelegramMessageHandler("/monitor", "Adds a stock to be monitored for dividends")]
 public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
-    public MonitorCommandHandler(State state) : base(state) { }
+    public MonitorCommandHandler(CoreState coreState) : base(coreState) { }
 
     protected override MonitorCommand ValidateArgs(MonitorCommand command) {
         if (!command.Valid) return command;
@@ -16,19 +16,19 @@ public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
     }
     
     protected override async Task<string> GetResponse(MonitorCommand command) {
-        var exists = await State.Monitor(command.Symbol);
+        var exists = await CoreState.Monitor(command.Symbol);
         if (!exists) {
             Console.WriteLine($"Received /monitor command for non existent symbol {command.Symbol} from {command.Sender}");
             return $"Could not find *{command.Symbol}* at [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/empresas-listadas.htm)\nPlease check the spelling";
         }
-        var summary = State.CashProvisions.GetSummary(command.Symbol.ToUpper(), DateTime.Today.AddYears(-1));
+        var summary = CoreState.CashProvisions.GetSummary(command.Symbol.ToUpper(), DateTime.Today.AddYears(-1));
         return $"Started monitoring *{command.Symbol.ToUpper()}* \nHere's the most recent data:\n\n{summary.ToMarkdown()}";
     }
 }
 
 [TelegramMessageHandler("/summary", "Gets stats for a stock and date interval")]
 public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
-    public SummaryCommandHandler(State state) : base(state) { }
+    public SummaryCommandHandler(CoreState coreState) : base(coreState) { }
 
     protected override SummaryCommand ValidateArgs(SummaryCommand command) {
         if (!command.Valid) return command;
@@ -40,11 +40,11 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
     }
 
     protected override Task<string> GetResponse(SummaryCommand command) {
-        if (!State.MonitoredSymbols.Contains(command.Symbol)) {
+        if (!CoreState.MonitoredSymbols.Contains(command.Symbol)) {
             return Task.FromResult($"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`");
         }
 
-        var summary = State.CashProvisions.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
+        var summary = CoreState.CashProvisions.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
         return Task.FromResult(summary.ToMarkdown());
 
     }
@@ -53,7 +53,7 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
 [TelegramMessageHandler("/simulate", "Simulates an investment in a stock for a certain period")]
 public class SimulationCommandHandler : BaseHandler<SimulationCommand>
 {
-    public SimulationCommandHandler(State state) : base(state) { }
+    public SimulationCommandHandler(CoreState coreState) : base(coreState) { }
 
     protected override SimulationCommand ValidateArgs(SimulationCommand command) {
         if (!command.Valid) return command;
@@ -71,12 +71,12 @@ public class SimulationCommandHandler : BaseHandler<SimulationCommand>
     }
 
     protected override async Task<string> GetResponse(SimulationCommand command) {
-        if (!State.MonitoredSymbols.Contains(command.Symbol))
+        if (!CoreState.MonitoredSymbols.Contains(command.Symbol))
         {
             return $"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`";
         }
 
-        var simulation = await State.CashProvisions
+        var simulation = await CoreState.CashProvisions
             .Simulate(
                 command.Symbol, 
                 command.MinDate, 
@@ -88,7 +88,7 @@ public class SimulationCommandHandler : BaseHandler<SimulationCommand>
 
 [TelegramMessageHandler("/portfolio", "Builds a portfolio from monitored assets to maximize earnings over a period")]
 public class PortfolioCommandHandler : BaseHandler<PortfolioCommand> {
-    public PortfolioCommandHandler(State state) : base(state) { }
+    public PortfolioCommandHandler(CoreState coreState) : base(coreState) { }
 
     protected override PortfolioCommand ValidateArgs(PortfolioCommand command) {
         if (!command.Valid) return command;
@@ -105,9 +105,9 @@ public class PortfolioCommandHandler : BaseHandler<PortfolioCommand> {
     }
 
     protected override async Task<string> GetResponse(PortfolioCommand command) {
-        var portfolio = await State.CashProvisions
+        var portfolio = await CoreState.CashProvisions
             .BuildPortfolio(
-                State.MonitoredSymbols.ToArray(),
+                CoreState.MonitoredSymbols.ToArray(),
                 command.MinDate,
                 command.MaxDate,
                 command.Investment,

@@ -1,25 +1,8 @@
-﻿using DividendsHelper.Fetching;
+using DividendsHelper.Fetching;
 using DividendsHelper.Models;
 using DividendsHelper.Utils;
-using static System.EnvironmentVariableTarget;
 
 namespace DividendsHelper.States;
-public class InstrumentState : BaseState<string, Instrument, string, SearchResult> {
-    private readonly InstrumentFetcher _fetcher;
-
-    public InstrumentState(InstrumentFetcher fetcher) {
-        _fetcher = fetcher;
-    }
-
-    protected override Instrument ConvertDto(string symbol, SearchResult dto) =>
-        new() {
-            Symbol = symbol,
-            TradingName = dto.TradingName,
-        };
-
-    protected override IBaseFetcher<string, SearchResult> GetFetcher() => _fetcher;
-}
-
 public class CashProvisionState : BaseState<CashProvisionId, CashProvision, string, CashProvisionsResult> {
     private readonly Dictionary<string, HashSet<CashProvision>> _cacheBySymbol = new();
     private readonly Dictionary<(string, DateTime), HashSet<CashProvision>> _cacheBySymbolDate = new();
@@ -211,101 +194,5 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         }
 
         return portfolio;
-    }
-}
-
-public class TradingDataState : BaseState<SymbolDate, TradingData, SymbolDate, TradingDataResult> {
-    
-    private readonly TradingDataFetcher _fetcher;
-
-    public TradingDataState(TradingDataFetcher fetcher) {
-        _fetcher = fetcher;
-    }
-
-    protected override IBaseFetcher<SymbolDate, TradingDataResult> GetFetcher() => _fetcher;
-
-    protected override TradingData ConvertDto(SymbolDate req, TradingDataResult dto) => new() {
-        Symbol = req.Symbol,
-        ReferenceDate = req.ReferenceDate,
-        ClosingPrice = dto.Price,
-    };
-
-    public override async Task<TradingData?> Get(SymbolDate id) {
-        var ret = await base.Get(id);
-        if (ret != null) return ret;
-        if (await FetchAndInsert(id) == 0) return null;
-        return await base.Get(id);
-    }
-
-    protected override async Task<int> FetchAndInsert(SymbolDate request) {
-        var res = await GetFetcher().Fetch(request);
-        if (res is null || !res.Any()) return 0;
-        var recent = res.MaxBy(i => i.TradingDateTime);
-        var ret = Insert(request, recent);
-        return 1;
-    }
-}
-public class State {
-    private const string PathName = "DH_FILES";
-
-    private static string Path => Environment.GetEnvironmentVariable(PathName, Process) ??
-                                  Environment.GetEnvironmentVariable(PathName, Machine) ?? "";
-    
-    private InstrumentState Instruments { get; }
-    public CashProvisionState CashProvisions { get; }
-    private TradingDataState TradingData { get; }
-    private Timer? ProvisionsSyncer { get; set; }
-
-    public HashSet<string> MonitoredSymbols { get; } = new();
-
-    public State() {
-        Instruments = new InstrumentState(new InstrumentFetcher());
-        TradingData = new TradingDataState(new TradingDataFetcher());
-        var provisionFetcher = new CashProvisionFetcher(Instruments);
-        CashProvisions = new CashProvisionState(provisionFetcher, TradingData);
-    }
-
-    public async Task Load() {
-        Logger.Log("Loading states...");
-        var p = System.IO.Path.Join(Path, "monitored");
-        if (!File.Exists(p)) return;
-        string? s = "";
-        using (var reader = new StreamReader(p)) {
-            s = await reader.ReadLineAsync();
-        }
-        if (s == null) {
-            Logger.Log("Loading states done.");
-            return;
-        }
-        MonitoredSymbols.UnionWith(s.Split(",").ToHashSet());
-        await Instruments.Load(MonitoredSymbols);
-        await CashProvisions.Load(MonitoredSymbols);
-        await TradingData.Load(MonitoredSymbols
-            .Select(symbol => new SymbolDate(symbol, DateTime.Today.AddDays(-1)))
-        );
-        ProvisionsSyncer = new Timer(new TimerCallback(async _ =>
-        {
-            await Task.WhenAll(MonitoredSymbols.Select(CashProvisions.Fetch));
-        }), null, 30 * 1000, 30 * 60 * 1000);
-        
-        Logger.Log("Loading states done.");
-    }
-
-    public async Task Stop() {
-        if (ProvisionsSyncer is not null)
-            await ProvisionsSyncer.DisposeAsync();
-        var s = string.Join(",", MonitoredSymbols);
-        var p = System.IO.Path.Join(Path, "monitored");
-        await using var writer = new StreamWriter(p);
-        await writer.WriteLineAsync(s);
-    }
-
-    public async Task<bool> Monitor(string symbol) {
-        var s = symbol.ToUpper();
-        var instruments = await Instruments.Fetch(s);
-        var provisions = await CashProvisions.Fetch(s);
-        if (instruments + provisions <= 0) return false;
-        MonitoredSymbols.Add(s);
-        return true;
     }
 }

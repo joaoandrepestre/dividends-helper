@@ -18,4 +18,21 @@
     <Folder Include="Assets\" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Remove="App\ServiceSetup\IServiceSetup.cs" />
+    <Compile Remove="App\ServiceSetup\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Remove="App\ServiceSetup\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Remove="App\ServiceSetup\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Remove="App\ServiceSetup\**" />
+  </ItemGroup>
+
 </Project>

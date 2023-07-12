@@ -1,5 +1,4 @@
-﻿using System.Net.Http.Json;
-using System.Text.Json;
+﻿using System.Text.Json;
 using DividendsHelper.Models;
 using DividendsHelper.Utils;
 
@@ -12,8 +11,8 @@ public interface IBaseFetcher<TRequest, TResponse> {
 public abstract class BaseFetcher<TRequest, TResponse> where TResponse : class {
     private readonly HttpClient _httpClient;
     
-    protected BaseFetcher() {
-        _httpClient = new HttpClient();
+    protected BaseFetcher(HttpClient httpClient) {
+        _httpClient = httpClient;
     }
 
     protected abstract string GetUrl(TRequest request);
@@ -34,6 +33,8 @@ public abstract class BaseFetcher<TRequest, TResponse> where TResponse : class {
 public abstract class BasePagedFetcher<TRequest, TResponse> : 
     BaseFetcher<PagedHttpRequest, PagedHttpResponse<TResponse>>, 
     IBaseFetcher<TRequest, TResponse> {
+    
+    protected BasePagedFetcher(HttpClient httpClient) : base(httpClient) { }
     protected override string GetUrl(PagedHttpRequest request) => request.GetUrl();
     
     protected abstract Task<PagedHttpRequest?> GetPagedRequest(TRequest request, int pageNumber = 1);
@@ -60,6 +61,9 @@ public abstract class BasePagedFetcher<TRequest, TResponse> :
 public abstract class BaseUnpagedFetcher<TRequest, TResponse> : 
     BaseFetcher<UnpagedHttpRequest, UnpagedHttpResponse>,
     IBaseFetcher<TRequest, TResponse> where TResponse : class, new() {
+    
+    protected BaseUnpagedFetcher(HttpClient httpClient) : base(httpClient) { }
+
     protected override string GetUrl(UnpagedHttpRequest request) => request.GetUrl();
     protected abstract UnpagedHttpRequest? GetUnpagedRequest(TRequest request);
 

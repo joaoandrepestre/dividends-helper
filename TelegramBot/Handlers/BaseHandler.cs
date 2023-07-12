@@ -14,10 +14,10 @@ public interface IBaseHandler {
 }
 public abstract class BaseHandler<T> : IBaseHandler 
     where T : BaseTelegramMessage, new() {
-    protected readonly State State;
+    protected readonly CoreState CoreState;
 
-    protected BaseHandler(State state) {
-        State = state;
+    protected BaseHandler(CoreState coreState) {
+        CoreState = coreState;
     }
 
     protected virtual T ValidateArgs(T command) => command;
