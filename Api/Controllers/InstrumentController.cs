@@ -11,6 +11,8 @@ public class InstrumentController : BaseApiController<string, Instrument> {
     public InstrumentController(CoreState coreState, InstrumentState state) : base(state) {
         _coreState = coreState;
     }
+    
+    [HttpPost]
     public string Monitored() =>
         string.Join(',', _coreState.MonitoredSymbols);
 
