@@ -10,9 +10,10 @@ public class CashProvisionConfig : ControllerConfig { }
 [Route("cash-provisions/[action]")]
 public class CashProvisionController : BaseApiController<CashProvisionId, CashProvision> {
     private readonly CashProvisionState _cashProvisions;
-
-    public CashProvisionController(CashProvisionState state, CashProvisionConfig config) : base(state, config) {
+    private readonly CoreState _core;
+    public CashProvisionController(CoreState core, CashProvisionState state, CashProvisionConfig config) : base(state, config) {
         _cashProvisions = state;
+        _core = core;
     }
 
     [HttpPost]
@@ -38,7 +39,8 @@ public class CashProvisionController : BaseApiController<CashProvisionId, CashPr
     [HttpPost]
     public Task<ApiResponse<Portfolio>> Portfolio([Bind("Symbols,MinDate,MaxDate,Investment,QtyLimit")] ApiRequest req) {
         var action = async (ApiRequest req) => {
-            var content = await _cashProvisions.BuildPortfolio(req.Symbols, req.MinDate, req.MaxDate, req.Investment,
+            var symbols = req.Symbols ?? _core.MonitoredSymbols.ToArray();
+            var content = await _cashProvisions.BuildPortfolio(symbols, req.MinDate, req.MaxDate, req.Investment,
                 req.QtyLimit);
             var fb = "";
             if (content is null) fb = "Could not build portfolio";
