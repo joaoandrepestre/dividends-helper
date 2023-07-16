@@ -1,0 +1,1 @@
+dotnet publish ..\core\DividendsHelper.Core.csproj --output "../publish/core"

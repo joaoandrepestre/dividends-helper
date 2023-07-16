@@ -1,0 +1,1 @@
+dotnet publish ..\telegram\DividendsHelper.Telegram.csproj --output "../publish/telegram"
