@@ -20,18 +20,18 @@ public class TradingDataState : BaseState<SymbolDate, TradingData, SymbolDate, T
         ClosingPrice = dto.Price,
     };
 
-    public override async Task<TradingData?> Get(SymbolDate id) {
-        var ret = await base.Get(id);
+    public override async Task<TradingData?> Read(SymbolDate id) {
+        var ret = await base.Read(id);
         if (ret != null) return ret;
         if (await FetchAndInsert(id) == 0) return null;
-        return await base.Get(id);
+        return await base.Read(id);
     }
 
     protected override async Task<int> FetchAndInsert(SymbolDate request) {
         var res = await GetFetcher().Fetch(request);
         if (res is null || !res.Any()) return 0;
         var recent = res.MaxBy(i => i.TradingDateTime);
-        var ret = Insert(request, recent);
+        var ret = Create(request, recent);
         return 1;
     }
 }

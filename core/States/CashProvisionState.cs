@@ -28,8 +28,8 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
             Price = dto.ClosingPricePriorExDate ?? 0,
         };
 
-    protected override CashProvision Insert(CashProvision value) {
-        var v = base.Insert(value);
+    protected override CashProvision Create(CashProvision value) {
+        var v = base.Create(value);
         if (v != value) return value;
         lock (Locker) {
             _cacheBySymbol.GetOrAdd(value.Symbol).Add(value);
@@ -38,7 +38,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         return v;
     }
 
-    public override IEnumerable<CashProvision> Insert(string symbol, IEnumerable<CashProvisionsResult> dtos) {
+    public override IEnumerable<CashProvision> Create(string symbol, IEnumerable<CashProvisionsResult> dtos) {
         var grouped = dtos
             .GroupBy(dto => new CashProvisionId(symbol, dto.LastDateTimePriorEx, dto.CorporateAction));
         var consolidated = new List<CashProvision>();
@@ -52,7 +52,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
                 CorporateActionPrice = g.Sum(i => i.CorporateActionPrice ?? 0),
             });
         }
-        return Insert(consolidated);
+        return Create(consolidated);
     }
 
     public CashProvisionSummary GetSummary(string symbol) => GetSummary(symbol, new DateTime(1, 1, 1));
@@ -107,7 +107,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         // check at most 1 week
         TradingData? data = null;
         for (; date <= date.AddDays(7); date = date.AddDays(1)) {
-            data = await _tradingData.Get(new SymbolDate(symbol, date));
+            data = await _tradingData.Read(new SymbolDate(symbol, date));
             if (data is not null) break;
         }
 
@@ -129,7 +129,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         }
         TradingData? data = null;
         for (; date >= date.AddDays(-7); date = date.AddDays(-1)) {
-            data = await _tradingData.Get(new SymbolDate(symbol, date));
+            data = await _tradingData.Read(new SymbolDate(symbol, date));
             if (data is not null) break;
         }
         

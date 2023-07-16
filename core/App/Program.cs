@@ -14,6 +14,7 @@ internal class Program {
                 services
                     .SetupFetching()
                     .SetupStates()
+                    .SetupApiConfig()
                     .SetupTelegramBot()
                     .AddHostedService<Service>();
             })

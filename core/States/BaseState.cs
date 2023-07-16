@@ -7,7 +7,10 @@ namespace DividendsHelper.Core.States;
 public interface IBaseState<TId, T>
     where TId : notnull
     where T : IBaseModel<TId> {
-    Task<T?> Get(TId id);
+    IEnumerable<T> Create(IEnumerable<T> dtos);
+    Task<T?> Read(TId id);
+    IEnumerable<T> Update(IEnumerable<T> dtos);
+    Task<T?> Delete(TId id);
 }
 
 public abstract class BaseState<TId, T, TRequest, TDto> : IBaseState<TId, T>
@@ -31,7 +34,7 @@ public abstract class BaseState<TId, T, TRequest, TDto> : IBaseState<TId, T>
     protected virtual async Task<int> FetchAndInsert(TRequest request) {
         var res = await GetFetcher().Fetch(request);
         if (res is null || !res.Any()) return 0;
-        var ret = Insert(request, res);
+        var ret = Create(request, res);
         return ret.Count();
     }
 
@@ -42,7 +45,7 @@ public abstract class BaseState<TId, T, TRequest, TDto> : IBaseState<TId, T>
         return count;
     }
 
-    protected virtual T Insert(T value) {
+    protected virtual T Create(T value) {
         T? current;
         lock (Locker) {
             if (_cache.TryGetValue(value.Id, out current)) {
@@ -56,19 +59,19 @@ public abstract class BaseState<TId, T, TRequest, TDto> : IBaseState<TId, T>
     }
 
     protected abstract T ConvertDto(TRequest req, TDto dto);
-    public T Insert(TRequest req, TDto dto) => Insert(ConvertDto(req, dto));
-    public virtual IEnumerable<T> Insert(TRequest req, IEnumerable<TDto> dtos) {
+    public T Create(TRequest req, TDto dto) => Create(ConvertDto(req, dto));
+    public virtual IEnumerable<T> Create(TRequest req, IEnumerable<TDto> dtos) {
         var values = dtos.Select(dto => ConvertDto(req, dto));
-        return Insert(values);
+        return Create(values);
     }
-    public IEnumerable<T> Insert(IEnumerable<T> values) {
+    public IEnumerable<T> Create(IEnumerable<T> values) {
         var ret = new List<T>();
         foreach (var v in values)
-            ret.Add(Insert(v));
+            ret.Add(Create(v));
         return ret;
     }
 
-    public virtual Task<T?> Get(TId id)
+    public virtual Task<T?> Read(TId id)
     {
         T? value;
         lock (Locker) {
@@ -76,6 +79,37 @@ public abstract class BaseState<TId, T, TRequest, TDto> : IBaseState<TId, T>
                 return Task.FromResult<T?>(null);
         }
         return Task.FromResult<T?>(value);
+    }
+
+    protected virtual T? Update(T value) {
+        T? current;
+        lock (Locker) {
+            if (!_cache.TryGetValue(value.Id, out current)) {
+                Console.WriteLine($"{GetType().Name}: Could not find Id {value.Id} on update");
+                return null;
+            }
+            _cache[value.Id] = value;
+        }
+        return value;
+    }
+
+    public IEnumerable<T> Update(IEnumerable<T> dtos) {
+        var ret = new List<T>();
+        foreach (var dto in dtos) {
+            var updated = Update(dto);
+            if (updated is not null)
+                ret.Add(updated);
+        }
+        return ret;
+    }
+
+    public async Task<T?> Delete(TId id) {
+        var current = await Read(id);
+        if (current is null) return null;
+        lock (Locker) {
+            _cache.Remove(id);
+        }
+        return current;
     }
 }
 

@@ -1,26 +1,49 @@
 using DividendsHelper.Core.States;
+using DividendsHelper.Models.ApiMessages;
 using DividendsHelper.Models.Core;
 using Microsoft.AspNetCore.Mvc;
 
-namespace DividendsHelper.Core.Controllers; 
+namespace DividendsHelper.Core.Controllers;
+
+public class CashProvisionConfig : ControllerConfig { }
 
 [Route("cash-provisions/[action]")]
 public class CashProvisionController : BaseApiController<CashProvisionId, CashProvision> {
     private readonly CashProvisionState _cashProvisions;
 
-    public CashProvisionController(CashProvisionState state) : base(state) {
+    public CashProvisionController(CashProvisionState state, CashProvisionConfig config) : base(state, config) {
         _cashProvisions = state;
     }
 
     [HttpPost]
-    public CashProvisionSummary Summary([Bind("Symbol,MinDate,MaxDate")] ApiRequest req) =>
-        _cashProvisions.GetSummary(req.Symbol, req.MinDate, req.MaxDate);
+    public Task<ApiResponse<CashProvisionSummary>> Summary([Bind("Symbol,MinDate,MaxDate")] ApiRequest req) {
+        var action = (ApiRequest req) => {
+            var content = _cashProvisions.GetSummary(req.Symbol, req.MinDate, req.MaxDate);
+            return Task.FromResult((content, ""));
+        };
+        return BaseAction(action, req);
+    }
 
     [HttpPost]
-    public Task<Simulation> Simulation([Bind("Symbol,MinDate,MaxDate,Investment")]ApiRequest req) =>
-        _cashProvisions.Simulate(req.Symbol, req.MinDate, req.MaxDate, req.Investment);
+    public Task<ApiResponse<Simulation>> Simulation([Bind("Symbol,MinDate,MaxDate,Investment")] ApiRequest req) {
+        var action = async (ApiRequest req) => {
+            var content = await _cashProvisions.Simulate(req.Symbol, req.MinDate, req.MaxDate, req.Investment);
+            var fb = "";
+            if (content is null) fb = $"Could not simulate {req.Symbol} from {req.MinDate} to {req.MaxDate}";
+            return (content, fb);
+        };
+        return BaseAction(action, req);
+    }
 
     [HttpPost]
-    public Task<Portfolio> Portfolio([Bind("Symbols,MinDate,MaxDate,Investment,QtyLimit")]ApiRequest req) =>
-        _cashProvisions.BuildPortfolio(req.Symbols, req.MinDate, req.MaxDate, req.Investment, req.QtyLimit);
+    public Task<ApiResponse<Portfolio>> Portfolio([Bind("Symbols,MinDate,MaxDate,Investment,QtyLimit")] ApiRequest req) {
+        var action = async (ApiRequest req) => {
+            var content = await _cashProvisions.BuildPortfolio(req.Symbols, req.MinDate, req.MaxDate, req.Investment,
+                req.QtyLimit);
+            var fb = "";
+            if (content is null) fb = "Could not build portfolio";
+            return (content, fb);
+        };
+        return BaseAction(action, req);
+    }
 }

@@ -7,7 +7,6 @@
     </PropertyGroup>
 
     <ItemGroup>
-      <Folder Include="ApiMessages\" />
       <Folder Include="Core\" />
       <Folder Include="Fetching\" />
     </ItemGroup>

@@ -21,5 +21,9 @@
   <ItemGroup>
     <ProjectReference Include="..\models\DividendsHelper.Models.csproj" />
   </ItemGroup>
+  
+  <ItemGroup>
+    <Compile Remove="Api\ApiRequest.cs" />
+  </ItemGroup>
 
 </Project>

@@ -13,7 +13,7 @@ public class CashProvisionFetcher : BasePagedFetcher<string, CashProvisionsResul
     }
 
     protected override async Task<PagedHttpRequest?> GetPagedRequest(string symbol, int pageNumber = 1) {
-        var instrument = await _instruments.Get(symbol);
+        var instrument = await _instruments.Read(symbol);
 
         if (instrument == null) return null;
 
