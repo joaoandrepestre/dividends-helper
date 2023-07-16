@@ -1,16 +1,15 @@
-﻿using DividendsHelper.Core.Models;
-using DividendsHelper.Core.States;
-using DividendsHelper.Core.TelegramBot.Handlers;
-using DividendsHelper.Core.Utils;
+﻿using DividendsHelper.Telegram.ApiClient;
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using DividendsHelper.Telegram.Handlers;
+using DividendsHelper.Telegram.Messages;
+using DividendsHelper.Telegram.Utils;
 using static System.EnvironmentVariableTarget;
-using static DividendsHelper.Core.Utils.LogLevel;
 
-namespace DividendsHelper.Core.TelegramBot;
+namespace DividendsHelper.Telegram;
 public class TelegramBotRouter {
     private const string TokenName = "DH_TOKEN";
 
@@ -25,18 +24,18 @@ public class TelegramBotRouter {
     private TelegramBotClient? _botClient;
     private readonly Dictionary<string, IBaseHandler> _commandHandlers = new();
 
-    public TelegramBotRouter(CoreState? state) {
-        RegisterCommandHandlers(state);
+    public TelegramBotRouter(DhApiClient api) {
+        RegisterCommandHandlers(api);
     }
 
-    private void RegisterCommandHandlers(CoreState? state) {
+    private void RegisterCommandHandlers(DhApiClient api) {
         var handlers = typeof(Program).Assembly.GetTypesWithAttribute<TelegramMessageHandlerAttribute>();
         foreach (var handlerType in handlers)
         {
             var command = handlerType.GetAttribute<TelegramMessageHandlerAttribute>()?.Command;
-            var handler = Activator.CreateInstance(handlerType, state) as IBaseHandler;
+            var handler = Activator.CreateInstance(handlerType, api) as IBaseHandler;
             if (command is not null && handler is not null) {
-                Logger.Log($"Registering handler for command {command}: {handlerType.Name}");
+                Console.WriteLine($"Registering handler for command {command}: {handlerType.Name}");
                 _commandHandlers.Add(command, handler);
             }
         }   
@@ -59,9 +58,9 @@ public class TelegramBotRouter {
     }
 
     public async Task<bool> Load() {
-        Logger.Log("Loading Telegram Bot...");
+        Console.WriteLine("Loading Telegram Bot...");
         if (string.IsNullOrEmpty(AccessToken)) {
-            Logger.Log($"ERROR - Could not retrieve access token. Remember to set the environment variable {TokenName}.", Error);
+            Console.WriteLine($"ERROR - Could not retrieve access token. Remember to set the environment variable {TokenName}.");
             return false;
         }
 
@@ -75,8 +74,8 @@ public class TelegramBotRouter {
         );
 
         var me = await _botClient.GetMeAsync();
-        Logger.Log($"Start listening for @{me.Username}...");
-        Logger.Log("Loading Telegram Bot done.");
+        Console.WriteLine($"Start listening for @{me.Username}...");
+        Console.WriteLine("Loading Telegram Bot done.");
         return true;
     }
 
@@ -97,7 +96,7 @@ public class TelegramBotRouter {
         var command = args[0];
         if (!_commandHandlers.TryGetValue(command, out var handler))
         {
-            Logger.Log($"Received an unrecognized command '{command}' in chat {message.Chat.Id} from {message.From?.Username ?? ""}.");
+            Console.WriteLine($"Received an unrecognized command '{command}' in chat {message.Chat.Id} from {message.From?.Username ?? ""}.");
             return;
         }
         
@@ -111,7 +110,7 @@ public class TelegramBotRouter {
             _ => exception.ToString()
         };
 
-        Logger.Log(errorMessage, Error);
+        Console.WriteLine(errorMessage);
         return Task.CompletedTask;
     }
 }

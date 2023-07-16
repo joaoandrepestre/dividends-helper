@@ -1,6 +1,6 @@
 ﻿using Telegram.Bot.Types;
 
-namespace DividendsHelper.Core.Models;
+namespace DividendsHelper.Telegram.Messages;
 
 public abstract class BaseTelegramMessage
 {

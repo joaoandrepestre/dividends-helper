@@ -7,7 +7,7 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DividendsHelper.Core", "cor
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DividendsHelper.Models", "models\DividendsHelper.Models.csproj", "{37A13166-A7CE-424F-BC6D-318D52660BF2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DividendsHelper.Telegram", "telegram\DividendsHelper.Telegram\DividendsHelper.Telegram.csproj", "{50FCA1A3-EF97-4AFD-8258-A62252D419D2}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "DividendsHelper.Telegram", "telegram\DividendsHelper.Telegram.csproj", "{50FCA1A3-EF97-4AFD-8258-A62252D419D2}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

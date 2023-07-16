@@ -17,11 +17,11 @@ public class InstrumentController : BaseApiController<string, Instrument> {
     }
 
     [HttpPost]
-    public Task<ApiResponse<string>> Monitored() {
+    public Task<ApiResponse<HashSet<string>>> Monitored() {
         var action = (object _) => {
-            var content = string.Join(',', _coreState.MonitoredSymbols);
+            var content = _coreState.MonitoredSymbols;
             var fb = "";
-            if (string.IsNullOrEmpty(content)) fb = "There are no monitored instruments";
+            if (content.Count == 0) fb = "There are no monitored instruments";
             return Task.FromResult((content, fb));
         };
         return BaseAction(action, null);

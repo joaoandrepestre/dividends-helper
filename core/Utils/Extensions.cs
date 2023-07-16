@@ -2,7 +2,6 @@
 using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text;
-using DividendsHelper.Core.Models;
 using DividendsHelper.Models.Fetching;
 
 namespace DividendsHelper.Core.Utils;
@@ -59,32 +58,6 @@ public static class HttpExtensions {
         return ret;
     }
 }
-
-public static class PropertyExtensions {
-    public static bool HasAttribute<T>(this PropertyInfo me) where T : Attribute =>
-        me.GetCustomAttributes(true).Any(a => a is T);
-
-    public static T? GetAttribute<T>(this PropertyInfo me) where T : Attribute =>
-        me
-            .GetCustomAttributes(true)
-            .Select(a => a as T)
-            .FirstOrDefault(t => t is not null);
-
-    public static T? GetAttribute<T>(this Type me) where T : Attribute =>
-        me
-            .GetCustomAttributes(true)
-            .Select(a => a as T)
-            .FirstOrDefault(t => t is not null);
-
-    public static IEnumerable<Type> GetTypesWithAttribute<T>(this Assembly assembly) where T : Attribute {
-        foreach(var type in assembly.GetTypes()) {
-            if (type.GetCustomAttributes(typeof(T), true).Length > 0) {
-                yield return type;
-            }
-        }
-    }
-}
-
 public static class StringExtensions {
     public static bool TryParse(this string me, out object ret, Type t) {
         ret = me;

@@ -1,4 +1,4 @@
-﻿namespace DividendsHelper.Core.Models;
+﻿namespace DividendsHelper.Telegram.Messages;
 
 [AttributeUsage(AttributeTargets.Property)]
 sealed class TelegramMessageArgumentAttribute : Attribute {

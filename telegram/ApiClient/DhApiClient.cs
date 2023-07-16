@@ -7,14 +7,14 @@ using static System.EnvironmentVariableTarget;
 
 namespace DividendsHelper.Telegram.ApiClient; 
 
-public class Client {
+public class DhApiClient {
     private const string ApiAddressName = "DH_API";
     private static string ApiAddress => Environment.GetEnvironmentVariable(ApiAddressName, Process) ??
                                         Environment.GetEnvironmentVariable(ApiAddressName, Machine) ?? "";
     
     private readonly HttpClient _httpClient;
 
-    public Client() {
+    public DhApiClient() {
         _httpClient = new HttpClient();
         if (string.IsNullOrEmpty(ApiAddress)) {
             Console.WriteLine(
@@ -24,7 +24,7 @@ public class Client {
         _httpClient.BaseAddress = new Uri(ApiAddress);
     }
 
-    private async Task<ApiResponse<TResponse>?> DoHttpRequest<TRequest, TResponse>(string endpoint, TRequest? request = null) 
+    private async Task<ApiResponse<TResponse>?> DoHttpRequest<TRequest, TResponse>(string endpoint, TRequest? request = null)
         where TRequest : class
         where TResponse : class {
         var content = request is null
@@ -43,10 +43,10 @@ public class Client {
     private Task<ApiResponse<TResponse>?> DoHttpRequest<TResponse>(string endpoint) where TResponse : class =>
         DoHttpRequest<object, TResponse>(endpoint);
 
-    public async Task GetMonitoredSymbols() {
-        var res = await DoHttpRequest<object, string>("/instruments/monitored", new());
-        if (res is null) return;
-        Console.WriteLine(res.Content);
+    public async Task<HashSet<string>> GetMonitoredSymbols() {
+        var res = await DoHttpRequest<HashSet<string>>("/instruments/monitored");
+        if (res is null || res.Content is null) return new();
+        return res.Content;
     }
 
     public async Task<CashProvisionSummary?> Monitor(string symbol) {
@@ -76,7 +76,7 @@ public class Client {
             MinDate = minDate,
             MaxDate = maxDate,
         };
-        var res = await DoHttpRequest<ApiRequest, Simulation>("/cash-provisions/simulate", req);
+        var res = await DoHttpRequest<ApiRequest, Simulation>("/cash-provisions/simulation", req);
         if (res is null) return null;
         return res.Content;
     }

@@ -1,13 +1,12 @@
-﻿using DividendsHelper.Core.Models;
-using DividendsHelper.Core.States;
-using DividendsHelper.Models.Core;
-using DividendsHelper.Models.Utils;
+﻿using DividendsHelper.Models.Utils;
+using DividendsHelper.Telegram.Messages;
+using DividendsHelper.Telegram.ApiClient;
 
-namespace DividendsHelper.Core.TelegramBot.Handlers;
+namespace DividendsHelper.Telegram.Handlers;
 
 [TelegramMessageHandler("/monitor", "Adds a stock to be monitored for dividends")]
 public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
-    public MonitorCommandHandler(CoreState coreState) : base(coreState) { }
+    public MonitorCommandHandler(DhApiClient api) : base(api) { }
 
     protected override MonitorCommand ValidateArgs(MonitorCommand command) {
         if (!command.Valid) return command;
@@ -16,19 +15,18 @@ public class MonitorCommandHandler : BaseHandler<MonitorCommand> {
     }
     
     protected override async Task<string> GetResponse(MonitorCommand command) {
-        var exists = await CoreState.Monitor(command.Symbol);
-        if (!exists) {
+        var summary = await Api.Monitor(command.Symbol);
+        if (summary is null) {
             Console.WriteLine($"Received /monitor command for non existent symbol {command.Symbol} from {command.Sender}");
             return $"Could not find *{command.Symbol}* at [B3](https://www.b3.com.br/pt_br/produtos-e-servicos/negociacao/renda-variavel/empresas-listadas.htm)\nPlease check the spelling";
         }
-        var summary = CoreState.CashProvisions.GetSummary(command.Symbol.ToUpper(), DateTime.Today.AddYears(-1));
         return $"Started monitoring *{command.Symbol.ToUpper()}* \nHere's the most recent data:\n\n{summary.ToMarkdown()}";
     }
 }
 
 [TelegramMessageHandler("/summary", "Gets stats for a stock and date interval")]
 public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
-    public SummaryCommandHandler(CoreState coreState) : base(coreState) { }
+    public SummaryCommandHandler(DhApiClient api) : base(api) { }
 
     protected override SummaryCommand ValidateArgs(SummaryCommand command) {
         if (!command.Valid) return command;
@@ -39,21 +37,21 @@ public class SummaryCommandHandler : BaseHandler<SummaryCommand> {
         return command;
     }
 
-    protected override Task<string> GetResponse(SummaryCommand command) {
-        if (!CoreState.MonitoredSymbols.Contains(command.Symbol)) {
-            return Task.FromResult($"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`");
+    protected override async Task<string> GetResponse(SummaryCommand command) {
+        var monitored = await Api.GetMonitoredSymbols();
+        if (!monitored.Contains(command.Symbol)) {
+            return $"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`";
         }
 
-        var summary = CoreState.CashProvisions.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
-        return Task.FromResult(summary.ToMarkdown());
-
+        var summary = await Api.GetSummary(command.Symbol, command.MinDate, command.MaxDate);
+        return summary.ToMarkdown();
     }
 }
 
 [TelegramMessageHandler("/simulate", "Simulates an investment in a stock for a certain period")]
 public class SimulationCommandHandler : BaseHandler<SimulationCommand>
 {
-    public SimulationCommandHandler(CoreState coreState) : base(coreState) { }
+    public SimulationCommandHandler(DhApiClient api) : base(api) { }
 
     protected override SimulationCommand ValidateArgs(SimulationCommand command) {
         if (!command.Valid) return command;
@@ -69,26 +67,27 @@ public class SimulationCommandHandler : BaseHandler<SimulationCommand>
         command.Error = $"expects _first date_ to be before _second date_ \n\nTry `{command.CommandName()} {command.Symbol} {command.MaxDate.DateString()} {command.MinDate.DateString()}`";
         return command;
     }
-
+    
     protected override async Task<string> GetResponse(SimulationCommand command) {
-        if (!CoreState.MonitoredSymbols.Contains(command.Symbol))
+        var monitored = await Api.GetMonitoredSymbols();
+        if (!monitored.Contains(command.Symbol))
         {
             return $"*{command.Symbol}* is not yet monitored\n\nTry `/monitor {command.Symbol}`";
         }
 
-        var simulation = await CoreState.CashProvisions
+        var simulation = await Api
             .Simulate(
                 command.Symbol, 
+                command.Investment,
                 command.MinDate, 
-                command.MaxDate, 
-                command.Investment);
+                command.MaxDate);
         return simulation.ToMarkdown();
     }
 }
 
 [TelegramMessageHandler("/portfolio", "Builds a portfolio from monitored assets to maximize earnings over a period")]
 public class PortfolioCommandHandler : BaseHandler<PortfolioCommand> {
-    public PortfolioCommandHandler(CoreState coreState) : base(coreState) { }
+    public PortfolioCommandHandler(DhApiClient api) : base(api) { }
 
     protected override PortfolioCommand ValidateArgs(PortfolioCommand command) {
         if (!command.Valid) return command;
@@ -105,13 +104,12 @@ public class PortfolioCommandHandler : BaseHandler<PortfolioCommand> {
     }
 
     protected override async Task<string> GetResponse(PortfolioCommand command) {
-        var portfolio = await CoreState.CashProvisions
+        var portfolio = await Api
             .BuildPortfolio(
-                CoreState.MonitoredSymbols.ToArray(),
-                command.MinDate,
-                command.MaxDate,
+                command.Limit / 100,
                 command.Investment,
-                command.Limit / 100);
+                command.MinDate,
+                command.MaxDate);
         return portfolio.ToMarkdown();
     }
 }

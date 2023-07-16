@@ -1,23 +1,22 @@
 ﻿using System.Reflection;
-using DividendsHelper.Core.Models;
-using DividendsHelper.Core.States;
-using DividendsHelper.Core.Utils;
 using Telegram.Bot;
-using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
-using static DividendsHelper.Core.Utils.LogLevel;
+using DividendsHelper.Telegram.Messages;
+using DividendsHelper.Telegram.ApiClient;
+using DividendsHelper.Telegram.Utils;
+using Telegram.Bot.Types;
 
-namespace DividendsHelper.Core.TelegramBot.Handlers;
+namespace DividendsHelper.Telegram.Handlers;
 
 public interface IBaseHandler {
     Task Handle(ITelegramBotClient botClient, Message message, CancellationToken cancellationToken);
 }
 public abstract class BaseHandler<T> : IBaseHandler 
     where T : BaseTelegramMessage, new() {
-    protected readonly CoreState CoreState;
+    protected readonly DhApiClient Api;
 
-    protected BaseHandler(CoreState coreState) {
-        CoreState = coreState;
+    protected BaseHandler(DhApiClient api) {
+        Api = api;
     }
 
     protected virtual T ValidateArgs(T command) => command;
@@ -46,10 +45,10 @@ public abstract class BaseHandler<T> : IBaseHandler
             try {
                 arg = args[(int)i];
             } catch (IndexOutOfRangeException) {
-                Logger.Log($"No value passed for argument {prop.Name}", Warning);
+                Console.WriteLine($"No value passed for argument {prop.Name}");
             }
             if (arg is null || !arg.TryParse(out var v, prop.PropertyType)) {
-                Logger.Log($"Invalid value for type {prop.PropertyType}: {arg ?? "null"}", Warning);
+                Console.WriteLine($"Invalid value for type {prop.PropertyType}: {arg ?? "null"}");
                 if (att?.Required ?? false) {
                     emptyRequired.Add(prop);
                 }

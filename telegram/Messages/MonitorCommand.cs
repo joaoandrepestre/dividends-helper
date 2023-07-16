@@ -1,4 +1,4 @@
-﻿namespace DividendsHelper.Core.Models;
+﻿namespace DividendsHelper.Telegram.Messages;
 public class MonitorCommand : BaseTelegramMessage
 {
     [TelegramMessageArgument(1, true, "PETR4")]

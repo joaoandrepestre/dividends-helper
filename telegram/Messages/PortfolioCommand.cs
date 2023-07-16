@@ -1,4 +1,4 @@
-namespace DividendsHelper.Core.Models; 
+namespace DividendsHelper.Telegram.Messages; 
 
 public class PortfolioCommand : BaseTelegramMessage {
     [TelegramMessageArgument(1)]
