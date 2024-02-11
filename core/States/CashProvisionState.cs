@@ -1,10 +1,11 @@
-using DividendsHelper.Core.Fetching;
+using Beef.Fetchers;
+using Beef.Types.Requests;
+using Beef.Types.Responses;
 using DividendsHelper.Core.Utils;
 using DividendsHelper.Models.Core;
-using DividendsHelper.Models.Fetching;
 
 namespace DividendsHelper.Core.States;
-public class CashProvisionState : BaseState<CashProvisionId, CashProvision, string, CashProvisionsResult> {
+public class CashProvisionState : BaseState<CashProvisionId, CashProvision, string, CashProvisionResponse> {
     private readonly Dictionary<string, HashSet<CashProvision>> _cacheBySymbol = new();
     private readonly Dictionary<(string, DateTime), HashSet<CashProvision>> _cacheBySymbolDate = new();
 
@@ -16,9 +17,9 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         _tradingData = tradingData;
     }
 
-    protected override IBaseFetcher<string, CashProvisionsResult> GetFetcher() => _fetcher;
+    protected override IB3Fetcher<string, CashProvisionResponse> GetFetcher() => _fetcher;
 
-    protected override CashProvision ConvertDto(string symbol, CashProvisionsResult dto) =>
+    protected override CashProvision ConvertDto(string symbol, CashProvisionResponse dto) =>
         new() {
             Symbol = symbol,
             ReferenceDate = dto.LastDateTimePriorEx,
@@ -38,7 +39,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         return v;
     }
 
-    public override IEnumerable<CashProvision> Create(string symbol, IEnumerable<CashProvisionsResult> dtos) {
+    public override IEnumerable<CashProvision> Create(string symbol, IEnumerable<CashProvisionResponse> dtos) {
         var grouped = dtos
             .GroupBy(dto => new CashProvisionId(symbol, dto.LastDateTimePriorEx, dto.CorporateAction));
         var consolidated = new List<CashProvision>();

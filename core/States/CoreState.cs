@@ -1,4 +1,5 @@
-﻿using DividendsHelper.Core.Utils;
+﻿using Beef.Types.Requests;
+using DividendsHelper.Core.Utils;
 using DividendsHelper.Models.Core;
 using static System.EnvironmentVariableTarget;
 

@@ -1,5 +1,5 @@
+using Beef.Fetchers;
 using DividendsHelper.Core.Controllers;
-using DividendsHelper.Core.Fetching;
 using DividendsHelper.Core.States;
 
 namespace DividendsHelper.Core; 

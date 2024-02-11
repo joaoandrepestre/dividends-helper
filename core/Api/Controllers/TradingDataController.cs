@@ -1,3 +1,4 @@
+using Beef.Types.Requests;
 using DividendsHelper.Core.States;
 using DividendsHelper.Models.Core;
 using Microsoft.AspNetCore.Mvc;
