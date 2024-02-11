@@ -23,7 +23,7 @@
     </ItemGroup>
 
     <ItemGroup>
-      <PackageReference Include="beef" Version="1.0.0" />
+      <PackageReference Include="Beef.Types" Version="1.0.0" />
     </ItemGroup>
 
 </Project>
