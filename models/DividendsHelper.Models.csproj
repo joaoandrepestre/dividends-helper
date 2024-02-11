@@ -8,7 +8,22 @@
 
     <ItemGroup>
       <Folder Include="Core\" />
-      <Folder Include="Fetching\" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <Compile Remove="Fetching\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <EmbeddedResource Remove="Fetching\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <None Remove="Fetching\**" />
+    </ItemGroup>
+
+    <ItemGroup>
+      <PackageReference Include="beef" Version="1.0.0" />
     </ItemGroup>
 
 </Project>

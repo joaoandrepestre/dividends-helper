@@ -5,3 +5,4 @@ obj/
 /.vs
 /.idea
 /publish
+*.DotSettings.user

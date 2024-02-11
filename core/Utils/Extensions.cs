@@ -1,8 +1,5 @@
 ﻿using System.Globalization;
-using System.Reflection;
 using System.Runtime.CompilerServices;
-using System.Text;
-using DividendsHelper.Models.Fetching;
 
 namespace DividendsHelper.Core.Utils;
 
@@ -12,50 +9,6 @@ public static class DictionaryExtensions {
         var v = new HashSet<T>();
         me.Add(key, v);
         return v;
-    }
-}
-
-public static class HttpExtensions {
-    private static string GetBaseUrl(this RequestType me) => me switch {
-        RequestType.Search => "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetInitialCompanies/",
-        RequestType.CashProvisions => "https://sistemaswebb3-listados.b3.com.br/listedCompaniesProxy/CompanyCall/GetListedCashDividends/",
-        RequestType.TradingData => "https://arquivos.b3.com.br/apinegocios/ticker/",
-        _ => "",
-    };
-
-    private static string ToBase64Url(this PagedHttpRequest me) {
-        var bytes = Encoding.UTF8.GetBytes(me.ToString());
-        return Convert.ToBase64String(bytes);
-        //.TrimEnd('=').Replace('+', '-').Replace('/', '_');
-    }
-
-    public static string GetUrl(this PagedHttpRequest me) =>
-        $"{me.RequestType.GetBaseUrl()}{me.ToBase64Url()}";
-
-    public static string GetUrl(this UnpagedHttpRequest me)
-    {
-        var args = string.Join("/", me.Params);
-        return $"{me.RequestType.GetBaseUrl()}{args}";
-    }
-
-    public static IEnumerable<T>? ParseResponse<T>(this UnpagedHttpResponse me) where T : class, new() {
-        var props = typeof(T)
-            .GetProperties()
-            .Where(p => p is { CanRead: true, CanWrite: true })
-            .ToDictionary(i => i.Name);
-        var ret = new List<T>();
-        foreach (var value in me.ValuesAsString) {
-            var instance = new T();
-            var columnsAndValues = me.Columns.Zip(value, (c, v) => (c.Name, v));
-            foreach (var (c, v) in columnsAndValues)
-            {
-                if (!props.TryGetValue(c, out var prop)) continue;
-                if (!v.TryParse(out var parsed, prop.PropertyType)) continue;
-                prop.SetValue(instance, parsed);
-            }
-            ret.Add(instance);
-        }
-        return ret;
     }
 }
 public static class StringExtensions {

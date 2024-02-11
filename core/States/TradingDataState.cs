@@ -1,10 +1,11 @@
-using DividendsHelper.Core.Fetching;
+using Beef.Fetchers;
+using Beef.Types.Requests;
+using Beef.Types.Responses;
 using DividendsHelper.Models.Core;
-using DividendsHelper.Models.Fetching;
 
 namespace DividendsHelper.Core.States; 
 
-public class TradingDataState : BaseState<SymbolDate, TradingData, SymbolDate, TradingDataResult> {
+public class TradingDataState : BaseState<SymbolDate, TradingData, SymbolDate, TradingDataResponse> {
     
     private readonly TradingDataFetcher _fetcher;
 
@@ -12,11 +13,11 @@ public class TradingDataState : BaseState<SymbolDate, TradingData, SymbolDate, T
         _fetcher = fetcher;
     }
 
-    protected override IBaseFetcher<SymbolDate, TradingDataResult> GetFetcher() => _fetcher;
+    protected override IB3Fetcher<SymbolDate, TradingDataResponse> GetFetcher() => _fetcher;
 
-    protected override TradingData ConvertDto(SymbolDate req, TradingDataResult dto) => new() {
+    protected override TradingData ConvertDto(SymbolDate req, TradingDataResponse dto) => new() {
         Symbol = req.Symbol,
-        ReferenceDate = req.ReferenceDate,
+        ReferenceDate = req.ReferenceDate.ToDateTime(TimeOnly.MinValue),
         ClosingPrice = dto.Price,
     };
 

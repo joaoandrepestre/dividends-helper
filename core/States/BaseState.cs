@@ -1,4 +1,4 @@
-﻿using DividendsHelper.Core.Fetching;
+﻿using Beef.Fetchers;
 using DividendsHelper.Core.Utils;
 using DividendsHelper.Models.Core;
 
@@ -21,7 +21,7 @@ public abstract class BaseState<TId, T, TRequest, TDto> : IBaseState<TId, T>
 
     protected readonly object Locker = new();
     
-    protected abstract IBaseFetcher<TRequest, TDto> GetFetcher();
+    protected abstract IB3Fetcher<TRequest, TDto> GetFetcher();
 
     public async Task Load(IEnumerable<TRequest> loadRequests) {
         Logger.Log($"Loading state {GetType().Name}...");
