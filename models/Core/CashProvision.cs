@@ -1,4 +1,5 @@
 ﻿using System.Text;
+using Crudite.Types;
 using DividendsHelper.Models.Utils;
 
 namespace DividendsHelper.Models.Core;

@@ -1,25 +1,14 @@
 using Beef.Fetchers;
 using Beef.Types.Requests;
 using Beef.Types.Responses;
+using Crudite;
 using DividendsHelper.Core.Utils;
 using DividendsHelper.Models.Core;
 
 namespace DividendsHelper.Core.States;
-public class CashProvisionState : BaseState<CashProvisionId, CashProvision, string, CashProvisionResponse> {
-    private readonly Dictionary<string, HashSet<CashProvision>> _cacheBySymbol = new();
-    private readonly Dictionary<(string, DateTime), HashSet<CashProvision>> _cacheBySymbolDate = new();
 
-    private readonly CashProvisionFetcher _fetcher;
-    private readonly TradingDataState _tradingData;
-
-    public CashProvisionState(CashProvisionFetcher fetcher, TradingDataState tradingData) {
-        _fetcher = fetcher;
-        _tradingData = tradingData;
-    }
-
-    protected override IB3Fetcher<string, CashProvisionResponse> GetFetcher() => _fetcher;
-
-    protected override CashProvision ConvertDto(string symbol, CashProvisionResponse dto) =>
+public class CashProvisionDtoConverter : IDtoConverter<string, CashProvisionResponse, CashProvision> {
+    public CashProvision ConvertDto(string symbol, CashProvisionResponse dto) =>
         new() {
             Symbol = symbol,
             ReferenceDate = dto.LastDateTimePriorEx,
@@ -28,7 +17,18 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
             CorporateAction = dto.CorporateAction,
             Price = dto.ClosingPricePriorExDate ?? 0,
         };
+}
+public class CashProvisionState : BaseState<CashProvisionId, CashProvision, string, CashProvisionResponse> {
+    private readonly Dictionary<string, HashSet<CashProvision>> _cacheBySymbol = new();
+    private readonly Dictionary<(string, DateTime), HashSet<CashProvision>> _cacheBySymbolDate = new();
 
+    private readonly TradingDataState _tradingData;
+
+    public CashProvisionState(CashProvisionLoader loader, CashProvisionDtoConverter dtoConverter, 
+        TradingDataState tradingData) : base(loader, dtoConverter){
+        _tradingData = tradingData;
+    }
+    
     protected override CashProvision Create(CashProvision value) {
         var v = base.Create(value);
         if (v != value) return value;
@@ -39,7 +39,7 @@ public class CashProvisionState : BaseState<CashProvisionId, CashProvision, stri
         return v;
     }
 
-    public override IEnumerable<CashProvision> Create(string symbol, IEnumerable<CashProvisionResponse> dtos) {
+    protected override Task<IEnumerable<CashProvision>> CreateLoaded(string symbol, IEnumerable<CashProvisionResponse> dtos) {
         var grouped = dtos
             .GroupBy(dto => new CashProvisionId(symbol, dto.LastDateTimePriorEx, dto.CorporateAction));
         var consolidated = new List<CashProvision>();

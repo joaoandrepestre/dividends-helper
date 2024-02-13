@@ -11,6 +11,8 @@ internal class Program {
             .ConfigureServices((context, services) => {
                 services
                     .SetupFetching()
+                    .SetupLoaders()
+                    .SetupConverters()
                     .SetupStates()
                     .SetupApiConfig()
                     .AddHostedService<Service>();

@@ -1,4 +1,5 @@
 using Beef.Types.Requests;
+using Crudite.Types;
 
 namespace DividendsHelper.Models.Core;
 

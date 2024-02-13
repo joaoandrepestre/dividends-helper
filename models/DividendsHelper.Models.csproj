@@ -24,6 +24,7 @@
 
     <ItemGroup>
       <PackageReference Include="Beef.Types" Version="1.0.0" />
+      <PackageReference Include="crudite.types" Version="1.0.0" />
     </ItemGroup>
 
 </Project>
