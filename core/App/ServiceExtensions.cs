@@ -11,6 +11,19 @@ public static class ServiceExtensions {
             .AddTransient<InstrumentFetcher>()
             .AddTransient<CashProvisionFetcher>()
             .AddTransient<TradingDataFetcher>();
+
+    public static IServiceCollection SetupLoaders(this IServiceCollection me) =>
+        me
+            .AddTransient<InstrumentLoader>()
+            .AddTransient<CashProvisionLoader>()
+            .AddTransient<TradingDataLoader>();
+
+    public static IServiceCollection SetupConverters(this IServiceCollection me) =>
+        me
+            .AddTransient<InstrumentDtoConverter>()
+            .AddTransient<CashProvisionDtoConverter>()
+            .AddTransient<TradingDataDtoConverter>();
+    
     public static IServiceCollection SetupStates(this IServiceCollection me) =>
         me
             .AddSingleton<InstrumentState>()

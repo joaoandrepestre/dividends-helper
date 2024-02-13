@@ -1,6 +1,6 @@
-using DividendsHelper.Core.States;
+using Crudite;
+using Crudite.Types;
 using DividendsHelper.Models.ApiMessages;
-using DividendsHelper.Models.Core;
 using Microsoft.AspNetCore.Mvc;
 
 namespace DividendsHelper.Core.Controllers;
@@ -9,9 +9,9 @@ namespace DividendsHelper.Core.Controllers;
 public abstract class BaseApiController<TId, T> : ControllerBase
     where T : IBaseModel<TId> 
     where TId : notnull {
-    private readonly IBaseState<TId, T> _state;
+    private readonly ICrudState<TId, T> _state;
     private readonly IControllerConfig _config;
-    protected BaseApiController(IBaseState<TId, T> state, IControllerConfig config) {
+    protected BaseApiController(ICrudState<TId, T> state, IControllerConfig config) {
         _state = state;
         _config = config;
     }
@@ -37,12 +37,12 @@ public abstract class BaseApiController<TId, T> : ControllerBase
 
     [HttpPost]
     public Task<ApiResponse<IEnumerable<T>>> Create(IEnumerable<T> dtos) {
-        var action = (IEnumerable<T> dtos) => {
-            var content = _state.Create(dtos);
+        var action = async (IEnumerable<T> dtos) => {
+            var content = await _state.Create(dtos);
             var fb = "";
             var count = dtos?.Count() ?? 0;
             if (content is null || !content.Any()) fb = $"Could not create {count} {typeof(T).Name}";
-            return Task.FromResult((content, fb));
+            return (content, fb);
         };
         return BaseAction(action, dtos, _config.EnableCreateAction);
     }
@@ -60,12 +60,12 @@ public abstract class BaseApiController<TId, T> : ControllerBase
 
     [HttpPost]
     public Task<ApiResponse<IEnumerable<T>>> Update(IEnumerable<T> dtos) {
-        var action =  (IEnumerable<T> dtos) => {
-            var content = _state.Update(dtos);
+        var action =  async (IEnumerable<T> dtos) => {
+            var content = await _state.Update(dtos);
             var fb = "";
             var count = dtos?.Count() ?? 0;
             if (content is null || content.Any()) fb = $"Could not update {count} {typeof(T).Name}";
-            return Task.FromResult((content, fb));
+            return (content, fb);
         };
         return BaseAction(action, dtos, _config.EnableUpdateAction);
     }

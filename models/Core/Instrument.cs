@@ -1,4 +1,6 @@
-﻿namespace DividendsHelper.Models.Core;
+﻿using Crudite.Types;
+
+namespace DividendsHelper.Models.Core;
 public class Instrument : IBaseModel<string> {
     public string Id => Symbol;
 

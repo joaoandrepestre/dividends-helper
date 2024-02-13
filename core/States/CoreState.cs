@@ -51,9 +51,9 @@ public class CoreState {
 
     public async Task<bool> Monitor(string symbol) {
         var s = symbol.ToUpper();
-        var instruments = await Instruments.Fetch(s);
-        var provisions = await CashProvisions.Fetch(s);
-        if (instruments + provisions <= 0) return false;
+        //var instruments = await Instruments.Fetch(s);
+        //var provisions = await CashProvisions.Fetch(s);
+        //if (instruments + provisions <= 0) return false;
         MonitoredSymbols.Add(s);
         return true;
     }
